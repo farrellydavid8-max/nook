@@ -14,7 +14,7 @@ export async function POST() {
     if (!(await codeIsPublished(link.lb_username, link.code))) {
       return NextResponse.json({
         ok: false,
-        reason: `Couldn't find ${link.code} on letterboxd.com/${link.lb_username} yet. Save it in your bio, wait a few seconds, and try again.`,
+        reason: `Couldn't find a list called ${link.code} on ${link.lb_username}'s Letterboxd yet. Letterboxd can take a minute or two to show new lists, so wait a moment and tap Verify again.`,
       });
     }
     await db.from("letterboxd_links").update({ verified: true }).eq("user_id", user.id);

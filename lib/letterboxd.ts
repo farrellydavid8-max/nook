@@ -82,13 +82,14 @@ export async function readDiary(username: string): Promise<DiaryEntry[] | null> 
     .filter((e) => e.guid && e.title);
 }
 
-// Ownership check: the code must appear in their Letterboxd bio, or anywhere in their public feed
-// (for example as the name of a new list), which only the account owner can change.
+// Ownership check: the code must appear in their public diary feed, where new lists show up,
+// so a list named with the code proves the account is theirs. (Letterboxd blocks servers from
+// reading profile pages, so the bio is only checked as a bonus in case that changes.)
 export async function codeIsPublished(username: string, code: string) {
+  const feed = await getText(`https://letterboxd.com/${encodeURIComponent(username)}/rss/?v=${Date.now()}`);
+  if (feed?.toLowerCase().includes(code)) return true;
   const profile = await getText(`https://letterboxd.com/${encodeURIComponent(username)}/`);
-  if (profile?.includes(code)) return true;
-  const feed = await getText(`https://letterboxd.com/${encodeURIComponent(username)}/rss/`);
-  return Boolean(feed?.includes(code));
+  return Boolean(profile?.toLowerCase().includes(code));
 }
 
 export async function letterboxdExists(username: string) {

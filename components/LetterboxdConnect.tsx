@@ -105,7 +105,7 @@ export default function LetterboxdConnect() {
       {link && !link.verified && (
         <div className="lb-steps">
           <p className="sub" style={{ margin: 0, lineHeight: 1.5 }}>
-            To prove <b>{link.lb_username}</b> is yours, add this code anywhere in your Letterboxd bio (Settings → Profile → Bio), save, then tap Verify. You can remove it afterwards.
+            To prove <b>{link.lb_username}</b> is yours, make a new list on Letterboxd with this code as its name. Add any one film and save it, then tap Verify. You can delete the list afterwards.
           </p>
           <div className="code-chip">
             <code>{link.code}</code>
@@ -114,8 +114,8 @@ export default function LetterboxdConnect() {
             </button>
           </div>
           <div className="connect-actions">
-            <a className="btn small" href="https://letterboxd.com/settings/" target="_blank" rel="noopener noreferrer">
-              Open Letterboxd settings
+            <a className="btn small" href="https://letterboxd.com/list/new/" target="_blank" rel="noopener noreferrer">
+              Make a list on Letterboxd
             </a>
             <button className="btn small primary" disabled={busy} onClick={verify}>
               {busy ? "Checking…" : "Verify"}
