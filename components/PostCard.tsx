@@ -1,37 +1,85 @@
 "use client";
 
 import Link from "next/link";
-import { stars, titleHref, type Post } from "@/lib/data";
+import { useState } from "react";
+import * as api from "@/lib/api";
+import { REWATCH_LABEL, profileHref, stars, titleHref, type Post } from "@/lib/data";
 import { useStore } from "@/lib/store";
+import Comments from "./Comments";
 import { HeartIcon, LinkIcon } from "./Icons";
 import { Avatar, Poster, Shot } from "./Media";
+import PostMenu from "./PostMenu";
 
-export default function PostCard({ post }: { post: Post }) {
-  const { toggleLike } = useStore();
+function CommentIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z" />
+    </svg>
+  );
+}
+
+export default function PostCard({ post, onChanged = () => {} }: { post: Post; onChanged?: () => void }) {
+  const { user, toast } = useStore();
   const t = post.title;
+  const [liked, setLiked] = useState(post.liked);
+  const [likes, setLikes] = useState(post.likes);
+  const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(post.comments);
+  const [revealSpoiler, setRevealSpoiler] = useState(false);
 
-  const likeButton = (
-    <button className="like" aria-pressed={post.liked} aria-label={`Like, ${post.likes} likes`} onClick={() => toggleLike(post)}>
-      <HeartIcon size={18} />
-      {post.likes}
-    </button>
+  async function like() {
+    if (!user) return toast("Log in to like posts");
+    const now = !liked;
+    setLiked(now);
+    setLikes((n) => n + (now ? 1 : -1));
+    try {
+      await api.setLike(post.id, user.id, now);
+    } catch {
+      setLiked(!now);
+      setLikes((n) => n + (now ? -1 : 1));
+      toast("Couldn't save that like");
+    }
+  }
+
+  const actions = (
+    <div className="post-actions">
+      <button className="like" aria-pressed={liked} aria-label={`Like, ${likes} likes`} onClick={like}>
+        <HeartIcon size={18} />
+        {likes}
+      </button>
+      <button className="like" aria-expanded={showComments} aria-label={`Comments, ${commentCount}`} onClick={() => setShowComments((s) => !s)}>
+        <CommentIcon />
+        {commentCount}
+      </button>
+    </div>
   );
 
   const action =
     post.type === "photo"
       ? `posted ${post.shots.length} ${post.shots.length === 1 ? "shot" : "shots"}`
-      : `logged ${t.medium === "Anime" ? "an anime" : t.medium === "Manga" ? "manga" : "a " + t.medium.toLowerCase()}`;
+      : post.status === "In progress"
+        ? "is partway through"
+        : post.status === "Dropped"
+          ? "dropped"
+          : post.rewatch
+            ? { Rewatch: "rewatched", Replay: "replayed", Reread: "reread" }[REWATCH_LABEL[t.medium]]
+            : `logged ${t.medium === "Anime" ? "an anime" : t.medium === "Manga" ? "manga" : "a " + t.medium.toLowerCase()}`;
 
   return (
     <article className="post">
       <div className="who">
-        <Avatar name={post.user} color={post.avatarColor} />
-        <div>
-          <strong>{post.user}</strong>{" "}
+        <Link href={profileHref(post.user)} aria-label={`${post.user}'s profile`}>
+          <Avatar name={post.user} color={post.avatarColor} />
+        </Link>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Link href={profileHref(post.user)} className="inline-title">
+            {post.user}
+          </Link>{" "}
           <span className="meta">
             {action} · {post.time}
           </span>
         </div>
+        <PostMenu post={post} onChanged={onChanged} />
       </div>
 
       {post.type === "photo" ? (
@@ -50,7 +98,7 @@ export default function PostCard({ post }: { post: Post }) {
               </Link>{" "}
               <span className="meta">· {t.medium}</span>
             </span>
-            {likeButton}
+            {actions}
           </div>
         </>
       ) : (
@@ -63,14 +111,22 @@ export default function PostCard({ post }: { post: Post }) {
               </Link>
               <div className="sub">
                 {[t.medium, t.year].filter(Boolean).join(" · ")}
-                {post.status && post.status !== "Finished" ? ` · ${post.status}` : ""}
+                {post.progress ? ` · ${post.progress}` : ""}
               </div>
               {post.rating > 0 && (
                 <div className="stars" aria-label={`${post.rating} stars`}>
                   {stars(post.rating)}
+                  {post.rewatch && <span className="tag">{REWATCH_LABEL[t.medium]}</span>}
                 </div>
               )}
-              {post.spoiler ? <p className="review meta">Review hidden: contains spoilers</p> : post.text && <p className="review">{post.text}</p>}
+              {post.text &&
+                (post.spoiler && !revealSpoiler ? (
+                  <button className="spoiler" onClick={() => setRevealSpoiler(true)}>
+                    This review has spoilers. Tap to read.
+                  </button>
+                ) : (
+                  <p className="review">{post.text}</p>
+                ))}
             </div>
           </div>
           {post.letterboxd && (
@@ -80,10 +136,11 @@ export default function PostCard({ post }: { post: Post }) {
             </a>
           )}
           <div className="postfoot" style={{ justifyContent: "flex-end" }}>
-            {likeButton}
+            {actions}
           </div>
         </>
       )}
+      {showComments && <Comments postId={post.id} postOwnerId={post.userId} onCount={setCommentCount} />}
     </article>
   );
 }

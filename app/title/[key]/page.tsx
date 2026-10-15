@@ -4,16 +4,26 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BackIcon } from "@/components/Icons";
-import { Avatar, PosterArt, Shot } from "@/components/Media";
-import { colorFor, describe, stars, type LogPost, type PhotoPost, type TitleRef } from "@/lib/data";
+import AddToList from "@/components/AddToList";
+import { PosterArt, Shot } from "@/components/Media";
+import PostCard from "@/components/PostCard";
+import * as api from "@/lib/api";
+import { colorFor, describe, type ListItem, type LogPost, type PhotoPost, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
+import { usePosts } from "@/lib/usePosts";
 
-type Tab = "reviews" | "photos";
+type Tab = "reviews" | "photos" | "lists";
 
 export default function TitlePage() {
   const router = useRouter();
   const key = decodeURIComponent(useParams<{ key: string }>().key);
-  const { posts, postsLoaded, wants, toggleWant, toast } = useStore();
+  const { user, wants, toggleWant, configured, loading, version } = useStore();
+  const { posts: here, loaded: postsLoaded, reload } = usePosts(configured && !loading ? { titleKey: key, limit: 300 } : null);
+  const [lists, setLists] = useState<ListItem[]>([]);
+  const [adding, setAdding] = useState(false);
+  useEffect(() => {
+    if (configured) api.fetchListsWithTitle(key).then(setLists).catch(() => {});
+  }, [key, configured, version]);
   const [tab, setTab] = useState<Tab>("reviews");
   const [fetched, setFetched] = useState<TitleRef | null>(null);
   const [lookupDone, setLookupDone] = useState(key.startsWith("manual-"));
@@ -31,7 +41,6 @@ export default function TitlePage() {
     };
   }, [key]);
 
-  const here = posts.filter((p) => p.title.key === key);
   // Prefer fresh catalog details; fall back to what was saved with posts
   const t: TitleRef | null = fetched ?? here[0]?.title ?? null;
 
@@ -82,19 +91,17 @@ export default function TitlePage() {
           <Link href={`/log?title=${keyParam}`} className="btn primary">
             Log
           </Link>
-          <button
-            className="btn"
-            aria-pressed={wanted}
-            onClick={() => {
-              toggleWant(t.key);
-              toast(wanted ? "Removed from Want to" : "Added to Want to");
-            }}
-          >
-            {wanted ? "On your list" : "Want to"}
+          <button className="btn" aria-pressed={wanted} onClick={() => toggleWant(t)}>
+            {wanted ? "✓ Want to" : "Want to"}
           </button>
           <Link href={`/post?title=${keyParam}`} className="btn">
             Post photos
           </Link>
+          {user && (
+            <button className="btn" onClick={() => setAdding(true)}>
+              Add to list
+            </button>
+          )}
         </div>
 
         <div className="dist">
@@ -113,36 +120,22 @@ export default function TitlePage() {
         </div>
 
         <div className="tabs" role="tablist">
-          {(["reviews", "photos"] as Tab[]).map((k) => (
+          {(["reviews", "photos", "lists"] as Tab[]).map((k) => (
             <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
-              {k === "reviews" ? `Reviews (${logs.length})` : `Photos (${photos.reduce((a, p) => a + p.shots.length, 0)})`}
+              {k === "reviews" ? `Reviews (${logs.length})` : k === "photos" ? `Photos (${photos.reduce((a, p) => a + p.shots.length, 0)})` : `Lists (${lists.length})`}
             </button>
           ))}
         </div>
 
         {tab === "reviews" &&
           (logs.length ? (
-            <div className="revlist">
+            <div className="feed" style={{ paddingTop: 16 }}>
               {logs.map((p) => (
-                <div className="rev" key={p.id}>
-                  <Avatar name={p.user} color={p.avatarColor} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 14 }}>
-                      <strong>{p.user}</strong>{" "}
-                      {p.rating > 0 && (
-                        <span className="stars" style={{ fontSize: 13 }}>
-                          {stars(p.rating)}
-                        </span>
-                      )}{" "}
-                      <span className="meta">· {p.time}</span>
-                    </div>
-                    {p.spoiler ? <p className="review meta">Review hidden: contains spoilers</p> : p.text && <p className="review">{p.text}</p>}
-                  </div>
-                </div>
+                <PostCard key={p.id} post={p} onChanged={reload} />
               ))}
             </div>
           ) : (
-            <div className="empty">No reviews yet. Be the first to log it.</div>
+            <div className="empty">No logs yet. Be the first to log it.</div>
           ))}
 
         {tab === "photos" &&
@@ -153,7 +146,26 @@ export default function TitlePage() {
           ) : (
             <div className="empty">No photos yet. Post a screenshot or a shot of your copy.</div>
           ))}
+
+        {tab === "lists" &&
+          (lists.length ? (
+            <div className="revlist">
+              {lists.map((l) => (
+                <Link key={l.id} href={`/lists/${l.id}`} className="rev" style={{ textDecoration: "none" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <strong>{l.name}</strong>
+                    <div className="sub">
+                      by {l.owner} · {l.items.length} {l.items.length === 1 ? "title" : "titles"}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="empty">Not on anyone&apos;s lists yet.</div>
+          ))}
       </div>
+      {adding && <AddToList title={t} onClose={() => setAdding(false)} />}
     </section>
   );
 }

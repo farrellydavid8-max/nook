@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import RequireAuth from "@/components/RequireAuth";
 import TitlePicker from "@/components/TitlePicker";
-import { LETTERBOXD, PROGRESS, normalizeUrl, type TitleRef } from "@/lib/data";
+import * as api from "@/lib/api";
+import { LETTERBOXD, PROGRESS, REWATCH_LABEL, normalizeUrl, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 const STATUSES = ["In progress", "Finished", "Revisit", "Dropped"];
@@ -13,10 +14,11 @@ const STATUSES = ["In progress", "Finished", "Revisit", "Dropped"];
 function LogForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const { addLog, toast } = useStore();
+  const { user, addLog, toast } = useStore();
+  const editId = Number(params.get("edit")) || undefined;
 
   const [title, setTitle] = useState<TitleRef | null>(null);
-  const [status, setStatus] = useState("Finished");
+  const [status, setStatus] = useState(STATUSES.includes(params.get("status") ?? "") ? params.get("status")! : "Finished");
   const [progress, setProgress] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [rating, setRating] = useState(0);
@@ -24,8 +26,31 @@ function LogForm() {
   const [lb, setLb] = useState("");
   const [lbError, setLbError] = useState(false);
   const [spoiler, setSpoiler] = useState(false);
+  const [rewatch, setRewatch] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingEdit, setLoadingEdit] = useState(Boolean(editId));
+
+  // Editing an existing log: load it and fill in the form
+  useEffect(() => {
+    if (!editId || !user) return;
+    api
+      .fetchPosts({ postId: editId, limit: 1 }, user.id)
+      .then(([p]) => {
+        if (!p || p.type !== "log" || p.userId !== user.id) return setError("You can only edit your own logs.");
+        setTitle(p.title);
+        setStatus(p.status ?? "Finished");
+        setProgress(p.progress ?? "");
+        if (p.loggedOn) setDate(p.loggedOn);
+        setRating(p.rating);
+        setText(p.text);
+        setLb(p.letterboxd ?? "");
+        setSpoiler(Boolean(p.spoiler));
+        setRewatch(Boolean(p.rewatch));
+      })
+      .catch(() => setError("Couldn't load that log."))
+      .finally(() => setLoadingEdit(false));
+  }, [editId, user]);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -46,20 +71,22 @@ function LogForm() {
       review: text.trim(),
       letterboxd: link ? normalizeUrl(link) : undefined,
       spoiler,
-    });
+      rewatch,
+    }, editId);
     setSaving(false);
     if (problem) return setError(problem);
-    toast(`Logged ${title.name}`);
-    router.push("/");
+    toast(editId ? "Log updated" : `Logged ${title.name}`);
+    if (editId) router.back();
+    else router.push("/");
   }
 
   return (
-    <form className="screen narrow" onSubmit={save} noValidate aria-label="New log">
+    <form className="screen narrow" onSubmit={save} noValidate aria-label={editId ? "Edit log" : "New log"}>
       <header className="sheethead">
         <Link href="/" className="linkbtn">
           Cancel
         </Link>
-        <h1>New log</h1>
+        <h1>{editId ? "Edit log" : "New log"}</h1>
         <button type="submit" className="pill" disabled={saving || !title}>
           {saving ? "Saving…" : "Save"}
         </button>
@@ -73,7 +100,7 @@ function LogForm() {
 
       <div className="field">
         What are you logging?
-        <TitlePicker value={title} onChange={setTitle} initialKey={params.get("title")} />
+        {loadingEdit ? <p className="sub">Loading your log…</p> : <TitlePicker value={title} onChange={setTitle} initialKey={editId ? null : params.get("title")} />}
       </div>
 
       <div className="field">
@@ -138,6 +165,11 @@ function LogForm() {
           aria-invalid={lbError}
         />
         {lbError && <span className="err">Paste a link that starts with letterboxd.com</span>}
+      </label>
+
+      <label className="check" htmlFor="log-rewatch">
+        <input id="log-rewatch" type="checkbox" checked={rewatch} onChange={(e) => setRewatch(e.target.checked)} />
+        {title ? REWATCH_LABEL[title.medium] : "Rewatch, replay or reread"} (I&apos;ve done this before)
       </label>
 
       <label className="check" htmlFor="log-spoiler">

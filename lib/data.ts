@@ -28,8 +28,10 @@ type PostBase = {
   avatarColor: string;
   title: TitleRef;
   time: string;
+  createdAt: string;
   likes: number;
   liked: boolean;
+  comments: number;
 };
 
 export type LogPost = PostBase & {
@@ -40,6 +42,8 @@ export type LogPost = PostBase & {
   spoiler?: boolean;
   status?: string;
   progress?: string;
+  loggedOn?: string;
+  rewatch?: boolean;
 };
 
 export type PhotoPost = PostBase & {
@@ -62,6 +66,37 @@ export type Profile = {
   layout: "favorites" | "photos";
   show_stats: boolean;
   letterboxd_url: string | null;
+  favorites: TitleRef[] | null;
+};
+
+export type CommentItem = {
+  id: number;
+  postId: number;
+  userId: string;
+  user: string;
+  avatarColor: string;
+  body: string;
+  time: string;
+};
+
+export type NotificationItem = {
+  id: number;
+  type: "follow" | "like" | "comment";
+  actor: string;
+  actorColor: string;
+  postId: number | null;
+  postTitle?: string;
+  read: boolean;
+  time: string;
+};
+
+export type ListItem = {
+  id: number;
+  userId: string;
+  owner: string;
+  name: string;
+  description: string;
+  items: TitleRef[];
 };
 
 export const MEDIA: Record<Medium, string> = {
@@ -117,3 +152,16 @@ export const LETTERBOXD = /^(https?:\/\/)?(www\.)?(letterboxd\.com|boxd\.it)\//i
 export const normalizeUrl = (u: string) => (u.startsWith("http") ? u : `https://${u}`);
 
 export const describe = (t: TitleRef) => [t.medium, t.year, t.creator].filter(Boolean).join(" · ");
+
+export const REWATCH_LABEL: Record<Medium, string> = {
+  Film: "Rewatch",
+  TV: "Rewatch",
+  Anime: "Rewatch",
+  Game: "Replay",
+  Book: "Reread",
+  Manga: "Reread",
+  Comic: "Reread",
+};
+
+export const profileHref = (username: string) => `/u/${encodeURIComponent(username)}`;
+export const USERNAME = /^[a-z0-9_]{3,20}$/;

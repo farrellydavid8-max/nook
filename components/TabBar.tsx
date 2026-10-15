@@ -3,20 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { CompassIcon, HomeIcon, PhotoIcon, PlusIcon, UserIcon } from "./Icons";
+import { BellIcon, CompassIcon, HomeIcon, PhotoIcon, PlusIcon, UserIcon } from "./Icons";
 
 const TABS = [
   { href: "/", label: "Feed", Icon: HomeIcon },
   { href: "/explore", label: "Explore", Icon: CompassIcon, match: "/explore" },
   { href: "/log", label: "Log something", Icon: PlusIcon, plus: true },
   { href: "/post", label: "Post photos", Icon: PhotoIcon },
-  { href: "/profile", label: "Profile", Icon: UserIcon },
+  { href: "/profile", label: "Profile", Icon: UserIcon, match: "/u/" },
 ];
 
 // On phones this is the bottom tab bar; on wider screens CSS turns it into a left sidebar.
 export default function TabBar() {
   const path = usePathname();
-  const { user, profile } = useStore();
+  const { user, profile, unread } = useStore();
   // On phones the log, photo and login screens are full-screen sheets, so the bar hides there.
   const sheet = path === "/log" || path === "/post" || path === "/login";
 
@@ -26,7 +26,7 @@ export default function TabBar() {
         Nook<span className="dot">.</span>
       </Link>
       {TABS.map(({ href, label, Icon, plus, match }) => {
-        const active = match ? path.startsWith(match) : path === href;
+        const active = match === "/u/" ? Boolean(profile && path.startsWith(`/u/${profile.username}`)) : match ? path.startsWith(match) : path === href;
         return (
           <Link
             key={label}
@@ -40,11 +40,18 @@ export default function TabBar() {
           </Link>
         );
       })}
+      {user && (
+        <Link href="/notifications" aria-label={`Notifications${unread ? `, ${unread} new` : ""}`} aria-current={path === "/notifications" ? "page" : undefined} className="tab desktop-tab badge-wrap">
+          <BellIcon size={24} />
+          <span className="tab-label">Notifications</span>
+          {unread > 0 && <span className="badge">{unread > 9 ? "9+" : unread}</span>}
+        </Link>
+      )}
       <div className="side-foot">
         {user && profile ? (
-          <span>
+          <Link href="/profile" className="side-me">
             Signed in as <strong>{profile.username}</strong>
-          </span>
+          </Link>
         ) : (
           <Link href="/login" className="btn primary" style={{ width: "100%" }}>
             Log in or sign up

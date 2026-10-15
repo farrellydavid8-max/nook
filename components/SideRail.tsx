@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { titleHref, type TitleRef } from "@/lib/data";
+import { titleHref, type Post, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { PosterArt } from "./Media";
 
 // The right-hand column on the desktop feed. Hidden on phones.
-export default function SideRail() {
-  const { posts, user } = useStore();
+export default function SideRail({ posts }: { posts: Post[] }) {
+  const { user } = useStore();
 
   // Titles with the most posts on Nook
   const byKey = new Map<string, { title: TitleRef; n: number }>();
