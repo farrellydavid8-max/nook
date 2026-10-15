@@ -77,7 +77,7 @@ type PostRow = TitleRow & {
 };
 
 const POST_SELECT =
-  "id,user_id,type,title,title_key,medium,year,creator,poster_url,status,progress,logged_on,rating,review,letterboxd_url,spoiler,rewatch,photos,filter,filter_strength,caption,created_at,author:profiles(username,avatar_color,avatar_url),likes(user_id),comments(count)";
+  "id,user_id,type,title,title_key,medium,year,creator,poster_url,status,progress,logged_on,rating,review,letterboxd_url,spoiler,rewatch,photos,filter,filter_strength,caption,created_at,author:profiles!posts_user_id_fkey(username,avatar_color,avatar_url),likes(user_id),comments(count)";
 
 function toPost(r: PostRow, me?: string): Post {
   const base = {
