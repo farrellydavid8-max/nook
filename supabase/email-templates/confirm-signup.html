@@ -1,0 +1,10 @@
+<!-- Supabase → Authentication → Emails → Confirm signup. Subject: Confirm your Nook account -->
+<div style="background:#0F0F10;padding:40px 16px;font-family:Helvetica,Arial,sans-serif;color:#EDE8E1">
+  <div style="max-width:480px;margin:0 auto;background:#18181B;border-radius:16px;padding:32px">
+    <p style="font-family:Georgia,'Times New Roman',serif;font-size:34px;margin:0 0 20px">Nook<span style="color:#E8A33D">.</span></p>
+    <p style="font-size:17px;margin:0 0 12px">Welcome{{ if .Data.username }}, {{ .Data.username }}{{ end }}!</p>
+    <p style="font-size:15px;line-height:1.6;color:#D6D1CA;margin:0 0 24px">Confirm your email to finish setting up your account. Then start logging everything you watch, play and read.</p>
+    <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#E8A33D;color:#141210;font-weight:bold;font-size:15px;text-decoration:none;padding:14px 22px;border-radius:12px">Confirm my email</a>
+    <p style="font-size:12px;line-height:1.6;color:#A8A39C;margin:28px 0 0">If you didn't sign up for Nook, you can ignore this email.</p>
+  </div>
+</div>

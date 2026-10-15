@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { PosterArt } from "./Media";
 import Modal from "./Modal";
+import DeleteAccount from "./DeleteAccount";
 import SteamConnect from "./SteamConnect";
 import TitleSearch from "./TitleSearch";
 
@@ -157,6 +158,7 @@ export default function CustomizeProfile({ onClose }: { onClose: () => void }) {
           {saving ? "Saving…" : "Save"}
         </button>
       </div>
+      <DeleteAccount />
     </Modal>
   );
 }

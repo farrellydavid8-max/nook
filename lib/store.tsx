@@ -7,6 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { User } from "@supabase/supabase-js";
 import * as api from "./api";
 import type { FilterName, Profile, TitleRef } from "./data";
+import { clearInvite, readInvite } from "./invite";
 import { getSupabase, isConfigured } from "./supabase";
 
 export type NewLog = {
@@ -87,12 +88,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const sb = getSupabase();
     const [{ data: p }, fol, blk, wl, un] = await Promise.all([
       sb.from("profiles").select("*").eq("id", u.id).maybeSingle(),
-      api.fetchFollowingIds(u.id).catch(() => []),
-      api.fetchBlockedIds(u.id).catch(() => []),
+      api.fetchFollowingIds(u.id).catch(() => [] as string[]),
+      api.fetchBlockedIds(u.id).catch(() => [] as string[]),
       api.fetchWatchlist(u.id).catch(() => []),
       api.unreadCount(u.id).catch(() => 0),
     ]);
     setProfile((p as Profile) ?? null);
+    // Arrived from a friend's invite link? Follow them once you're in.
+    const invitedBy = readInvite();
+    if (invitedBy && p) {
+      clearInvite();
+      const inviter = await api.fetchProfileByUsername(invitedBy).catch(() => null);
+      if (inviter && inviter.id !== u.id && !fol.includes(inviter.id)) {
+        await api.setFollow(u.id, inviter.id, true).catch(() => {});
+        fol.push(inviter.id);
+      }
+    }
     setFollowing(new Set(fol));
     setBlocked(new Set(blk));
     setWants(new Map(wl.map((t) => [t.key, t])));

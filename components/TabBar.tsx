@@ -48,6 +48,9 @@ export default function TabBar() {
         </Link>
       )}
       <div className="side-foot">
+        <span className="side-legal">
+          <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link>
+        </span>
         {user && profile ? (
           <Link href="/profile" className="side-me">
             Signed in as <strong>{profile.username}</strong>

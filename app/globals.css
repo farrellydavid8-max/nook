@@ -299,6 +299,27 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 .playing-item { display: flex; flex-direction: column; gap: 4px; text-decoration: none; text-align: center; }
 .playing-item .poster { width: 100%; }
 
+/* People, invites, legal */
+.people li { display: flex; align-items: center; gap: 10px; padding: 6px 4px; }
+.person { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; text-decoration: none; padding: 4px; border-radius: 10px; }
+.person:hover strong { text-decoration: underline; }
+.person strong { display: block; }
+.person-bio { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.invite-card { margin-top: 24px; border: 2px solid transparent; border-radius: 22px; padding: 28px 22px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.invite-line { font-size: 18px; margin: 4px 0 0; }
+.invite-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.legal-line { margin-top: 24px; text-align: center; }
+.legal-line a, .side-legal a { color: var(--muted); }
+.side-legal { display: block; margin-bottom: 10px; font-size: 12px; }
+.legal { line-height: 1.65; color: var(--soft); padding-bottom: 60px; }
+.legal h1 { font-family: var(--display); font-weight: 400; font-size: 38px; color: var(--fg); margin: 24px 0 4px; }
+.legal h2 { font-size: 17px; color: var(--fg); margin: 28px 0 6px; }
+.legal ul { padding-left: 20px; }
+.legal li { margin-bottom: 6px; }
+.legal a { color: var(--accent); }
+.legal b { color: var(--fg); }
+.danger-zone { margin-top: 18px; padding: 14px; border: 1px solid #7a3a33; border-radius: 12px; }
+
 /* ---------- Pieces that only show on one screen size ---------- */
 .thead-text { padding-top: 62px; min-width: 0; }
 .tab-label, .side-brand, .side-foot, .desktop-only, .rail { display: none; }

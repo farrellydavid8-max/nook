@@ -8,6 +8,7 @@ import { BackIcon } from "@/components/Icons";
 import { getSupabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { USERNAME } from "@/lib/data";
+import { readInvite, saveInvite } from "@/lib/invite";
 
 
 function LoginForm() {
@@ -22,6 +23,11 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const invitedBy = params.get("invite");
+  useEffect(() => {
+    if (invitedBy) saveInvite(invitedBy);
+  }, [invitedBy]);
 
   useEffect(() => {
     if (user) router.replace(next);
@@ -68,7 +74,7 @@ function LoginForm() {
       const { data, error } = await sb.auth.signUp({
         email: email.trim(),
         password,
-        options: { data: { username: name }, emailRedirectTo: window.location.origin },
+        options: { data: { username: name, invited_by: readInvite() ?? undefined }, emailRedirectTo: window.location.origin },
       });
       setBusy(false);
       if (error) return setError(error.message);
@@ -95,6 +101,11 @@ function LoginForm() {
       <p className="review" style={{ marginTop: 8 }}>
         Everything you watch, play and read, in one place.
       </p>
+      {invitedBy && (
+        <p className="sub" style={{ color: "var(--accent)" }}>
+          Invited by {invitedBy}. You&apos;ll follow each other when you join.
+        </p>
+      )}
 
       <div className="tabs" role="tablist" style={{ marginTop: 24 }}>
         <button role="tab" aria-selected={mode === "signup"} onClick={() => setMode("signup")}>
@@ -165,6 +176,9 @@ function LoginForm() {
         </svg>
         Continue with Google
       </button>
+      <p className="sub legal-line">
+        By joining you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
+      </p>
     </section>
   );
 }

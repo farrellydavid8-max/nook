@@ -12,6 +12,7 @@ import { Avatar, Poster, PosterArt, Shot } from "./Media";
 import Modal from "./Modal";
 import NewListButton from "./NewListButton";
 import PostCard from "./PostCard";
+import { inviteUrl } from "@/lib/invite";
 
 type Tab = "Diary" | "Games" | "Reviews" | "Photos" | "Lists" | "Want to";
 
@@ -271,6 +272,26 @@ export default function ProfileView({ username }: { username: string }) {
           <div className="prow-actions">
             {isMe ? (
               <>
+                <button
+                  className="btn primary"
+                  onClick={async () => {
+                    const link = inviteUrl(profile.username);
+                    const share = { title: "Join me on Nook", text: "I'm logging everything I watch, play and read on Nook. Come follow me:", url: link };
+                    try {
+                      if (navigator.share) return await navigator.share(share);
+                    } catch {
+                      return; // closed the share sheet
+                    }
+                    try {
+                      await navigator.clipboard.writeText(link);
+                      toast("Invite link copied. Friends who join will follow you back.");
+                    } catch {
+                      toast(link);
+                    }
+                  }}
+                >
+                  Invite friends
+                </button>
                 <Link href="/import" className="btn">
                   Import
                 </Link>
@@ -341,6 +362,11 @@ export default function ProfileView({ username }: { username: string }) {
           </div>
         )}
         {sections}
+        {isMe && (
+          <p className="sub legal-line mobile-only">
+            <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link>
+          </p>
+        )}
       </div>
 
       {customizing && <CustomizeProfile onClose={() => setCustomizing(false)} />}
