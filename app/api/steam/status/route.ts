@@ -9,6 +9,18 @@ export async function GET() {
     secretKeyLooksRight: /^(sb_secret_|eyJ)/.test(process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""),
     cronSecretSet: Boolean(process.env.CRON_SECRET),
   };
+  // Which kind of Supabase key it is (never the key itself)
+  const k = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  if (k.startsWith("sb_secret_")) status.secretKeyKind = "secret";
+  else if (k.startsWith("sb_publishable_")) status.secretKeyKind = "publishable (wrong key)";
+  else if (k.startsWith("eyJ")) {
+    try {
+      const role = JSON.parse(Buffer.from(k.split(".")[1], "base64url").toString()).role;
+      status.secretKeyKind = role === "service_role" ? "service_role" : `${role} (wrong key)`;
+    } catch {
+      status.secretKeyKind = "unreadable";
+    }
+  } else status.secretKeyKind = k ? "unknown" : "missing";
   try {
     const db = adminDb();
     const links = await db.from("steam_links").select("user_id", { count: "exact", head: true });
