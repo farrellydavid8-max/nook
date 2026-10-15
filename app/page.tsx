@@ -1,95 +1,53 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { useState } from "react";
+import PostCard from "@/components/PostCard";
+import { BellIcon, SearchIcon } from "@/components/Icons";
+import { findTitle, MEDIA, type Medium } from "@/lib/data";
+import { useStore } from "@/lib/store";
+
+export default function FeedPage() {
+  const { posts, toast } = useStore();
+  const [filter, setFilter] = useState<"All" | Medium>("All");
+  const list = posts.filter((p) => filter === "All" || findTitle(p.title).medium === filter);
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+    <section className="screen" aria-label="Feed">
+      <header className="topbar">
+        <h1 className="wordmark">
+          Nook<span>.</span>
+        </h1>
+        <div>
+          <Link href="/title/dune-part-two" className="iconbtn" aria-label="Search">
+            <SearchIcon />
+          </Link>
+          <button className="iconbtn" aria-label="Notifications" onClick={() => toast("No new notifications")}>
+            <BellIcon />
+          </button>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </header>
+
+      <div className="chips" role="group" aria-label="Filter by medium">
+        {(["All", ...Object.keys(MEDIA)] as ("All" | Medium)[]).map((k) => (
+          <button key={k} className="chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>
+            {k === "All" ? "All" : MEDIA[k]}
+          </button>
+        ))}
+      </div>
+
+      <div className="feed">
+        {list.length ? (
+          list.map((p) => <PostCard key={p.id} post={p} />)
+        ) : (
+          <div className="empty">
+            No {filter === "All" ? "posts" : MEDIA[filter].toLowerCase()} from your friends yet.
+            <br />
+            Log one with the + button.
+          </div>
+        )}
+      </div>
+      <p className="note">Sample posts for now. Real accounts come next.</p>
+    </section>
   );
 }
