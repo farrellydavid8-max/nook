@@ -7,6 +7,7 @@ import {
   timeAgo,
   type CommentItem,
   type FilterName,
+  type LibraryGame,
   type ListItem,
   type Medium,
   type NotificationItem,
@@ -344,4 +345,43 @@ export async function setBlock(me: string, other: string, block: boolean) {
     : await sb().from("blocks").delete().match({ blocker_id: me, blocked_id: other });
   if (error) throw error;
   if (block) await sb().from("follows").delete().match({ follower_id: me, following_id: other });
+}
+
+/* ---------- Steam library ---------- */
+
+type LibraryRow = TitleRow & { playtime_minutes: number; last_played_at: string | null; achievements_done: number | null; achievements_total: number | null };
+
+const toGame = (r: LibraryRow): LibraryGame => ({
+  title: rowToTitle({ ...r, year: null, creator: null }),
+  minutes: r.playtime_minutes ?? 0,
+  lastPlayed: r.last_played_at ?? undefined,
+  achievementsDone: r.achievements_done ?? undefined,
+  achievementsTotal: r.achievements_total ?? undefined,
+});
+
+export async function fetchLibrary(userId: string): Promise<LibraryGame[]> {
+  const { data } = await sb()
+    .from("game_library")
+    .select("title,title_key,medium,poster_url,playtime_minutes,last_played_at,achievements_done,achievements_total")
+    .eq("user_id", userId)
+    .order("last_played_at", { ascending: false, nullsFirst: false })
+    .limit(1000);
+  return ((data ?? []) as unknown as LibraryRow[]).map(toGame);
+}
+
+export async function fetchLibraryEntry(userId: string, key: string): Promise<LibraryGame | null> {
+  const { data } = await sb()
+    .from("game_library")
+    .select("title,title_key,medium,poster_url,playtime_minutes,last_played_at,achievements_done,achievements_total")
+    .eq("user_id", userId)
+    .eq("title_key", key)
+    .maybeSingle();
+  return data ? toGame(data as unknown as LibraryRow) : null;
+}
+
+export type SteamLink = { steam_name: string | null; avatar_url: string | null; is_public: boolean; last_synced_at: string | null; sync_error: string | null };
+
+export async function fetchSteamLink(): Promise<SteamLink | null> {
+  const { data } = await sb().from("steam_links").select("steam_name,avatar_url,is_public,last_synced_at,sync_error").maybeSingle();
+  return (data as SteamLink) ?? null;
 }

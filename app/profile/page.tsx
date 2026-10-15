@@ -8,10 +8,20 @@ import { useStore } from "@/lib/store";
 // "Profile" in the menu goes to your own public page, /u/yourname
 function GoToMyProfile() {
   const router = useRouter();
-  const { profile } = useStore();
+  const { profile, toast } = useStore();
   useEffect(() => {
-    if (profile) router.replace(`/u/${profile.username}`);
-  }, [profile, router]);
+    if (!profile) return;
+    // Coming back from connecting Steam
+    const steam = new URLSearchParams(window.location.search).get("steam");
+    const messages: Record<string, string> = {
+      linked: "Steam connected. Your games are on your profile.",
+      private: "Steam connected, but your game details are private. Make them public in Steam, then tap Sync now in Customize.",
+      taken: "That Steam account is already connected to a different Nook account.",
+      failed: "Steam sign-in didn't go through. Try connecting again.",
+    };
+    if (steam && messages[steam]) toast(messages[steam]);
+    router.replace(`/u/${profile.username}`);
+  }, [profile, router, toast]);
   return <div className="empty">{profile ? "Opening your profile…" : "Setting up your profile… If this doesn't go away, log out and back in."}</div>;
 }
 

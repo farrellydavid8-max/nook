@@ -189,7 +189,7 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 .scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 19; }
 .drawer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--surface-2); border-radius: 20px 20px 0 0; padding: 8px var(--gut-r) max(20px, env(safe-area-inset-bottom, 0px)) var(--gut-l); box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5); z-index: 20; }
 
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; z-index: 30; white-space: nowrap; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; z-index: 30; width: max-content; max-width: min(90vw, 440px); text-align: center; line-height: 1.4; }
 
 /* ---------- Social features ---------- */
 .drawer { max-height: 88vh; overflow-y: auto; }
@@ -289,6 +289,15 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 .month-bar { width: 100%; max-width: 22px; border-radius: 3px 3px 0 0; background: var(--accent); }
 .month-label { font-size: 11px; color: var(--muted); }
 .year-facts p { margin: 0 0 10px; color: var(--soft); line-height: 1.5; }
+
+/* Steam */
+.connect-row { margin-top: 8px; padding: 12px; border-radius: 12px; background: var(--surface); display: flex; flex-direction: column; gap: 10px; }
+.connect-head { display: flex; gap: 12px; align-items: center; }
+.connect-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.connect-row .err { margin: 0; line-height: 1.4; }
+.playing { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; max-width: 560px; }
+.playing-item { display: flex; flex-direction: column; gap: 4px; text-decoration: none; text-align: center; }
+.playing-item .poster { width: 100%; }
 
 /* ---------- Pieces that only show on one screen size ---------- */
 .thead-text { padding-top: 62px; min-width: 0; }

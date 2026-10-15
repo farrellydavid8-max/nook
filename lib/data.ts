@@ -165,3 +165,18 @@ export const REWATCH_LABEL: Record<Medium, string> = {
 
 export const profileHref = (username: string) => `/u/${encodeURIComponent(username)}`;
 export const USERNAME = /^[a-z0-9_]{3,20}$/;
+
+export type LibraryGame = {
+  title: TitleRef;
+  minutes: number;
+  lastPlayed?: string;
+  achievementsDone?: number;
+  achievementsTotal?: number;
+};
+
+export const hours = (minutes: number) => {
+  const h = minutes / 60;
+  return h < 1 ? `${minutes} min` : `${h < 10 ? h.toFixed(1).replace(/\.0$/, "") : Math.round(h).toLocaleString()} h`;
+};
+
+export const recentlyPlayed = (g: LibraryGame, days = 14) => Boolean(g.lastPlayed && Date.now() - new Date(g.lastPlayed).getTime() < days * 86400000);

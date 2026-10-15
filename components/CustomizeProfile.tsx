@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { PosterArt } from "./Media";
 import Modal from "./Modal";
+import SteamConnect from "./SteamConnect";
 import TitleSearch from "./TitleSearch";
 
 const BANNERS = ["#3B3226", "#2E4A52", "#4A2E3E", "#2F3A2A", "#1F2433", "#4A3A22"];
@@ -137,6 +138,11 @@ export default function CustomizeProfile({ onClose }: { onClose: () => void }) {
         <input id="show-stats" type="checkbox" checked={profile.show_stats} onChange={(e) => set({ show_stats: e.target.checked })} />
         Show stats
       </label>
+
+      <div className="label" style={{ marginTop: 18 }}>
+        Connected accounts
+      </div>
+      <SteamConnect />
 
       {error && (
         <p className="err" role="alert" style={{ fontSize: 14 }}>

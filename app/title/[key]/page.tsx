@@ -8,7 +8,7 @@ import AddToList from "@/components/AddToList";
 import { PosterArt, Shot } from "@/components/Media";
 import PostCard from "@/components/PostCard";
 import * as api from "@/lib/api";
-import { colorFor, describe, type ListItem, type LogPost, type PhotoPost, type TitleRef } from "@/lib/data";
+import { colorFor, describe, hours, type LibraryGame, type ListItem, type LogPost, type PhotoPost, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { usePosts } from "@/lib/usePosts";
 
@@ -21,6 +21,10 @@ export default function TitlePage() {
   const { posts: here, loaded: postsLoaded, reload } = usePosts(configured && !loading ? { titleKey: key, limit: 300 } : null);
   const [lists, setLists] = useState<ListItem[]>([]);
   const [adding, setAdding] = useState(false);
+  const [mine, setMine] = useState<LibraryGame | null>(null);
+  useEffect(() => {
+    if (user && key.startsWith("steam-")) api.fetchLibraryEntry(user.id, key).then(setMine).catch(() => {});
+  }, [user, key]);
   useEffect(() => {
     if (configured) api.fetchListsWithTitle(key).then(setLists).catch(() => {});
   }, [key, configured, version]);
@@ -84,6 +88,12 @@ export default function TitlePage() {
           <div className="thead-text">
             <h1>{t.name}</h1>
             <div className="sub">{describe(t)}</div>
+            {mine && (
+              <div className="sub" style={{ color: "var(--accent)", marginTop: 4 }}>
+                You&apos;ve played {hours(mine.minutes)} on Steam
+                {mine.achievementsTotal ? ` · ${mine.achievementsDone}/${mine.achievementsTotal} achievements` : ""}
+              </div>
+            )}
           </div>
         </div>
 

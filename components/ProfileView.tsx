@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import * as api from "@/lib/api";
-import { MEDIA, stars, titleHref, type ListItem, type LogPost, type PhotoPost, type Profile, type TitleRef } from "@/lib/data";
+import { MEDIA, hours, recentlyPlayed, stars, timeAgo, titleHref, type LibraryGame, type ListItem, type LogPost, type PhotoPost, type Profile, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { usePosts } from "@/lib/usePosts";
 import CustomizeProfile from "./CustomizeProfile";
@@ -13,7 +13,7 @@ import Modal from "./Modal";
 import NewListButton from "./NewListButton";
 import PostCard from "./PostCard";
 
-type Tab = "Diary" | "Reviews" | "Photos" | "Lists" | "Want to";
+type Tab = "Diary" | "Games" | "Reviews" | "Photos" | "Lists" | "Want to";
 
 export default function ProfileView({ username }: { username: string }) {
   const { user, profile: me, following, blocked, toggleFollow, toggleBlock, signOut, version, toast } = useStore();
@@ -21,6 +21,7 @@ export default function ProfileView({ username }: { username: string }) {
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
   const [lists, setLists] = useState<ListItem[]>([]);
   const [watchlist, setWatchlist] = useState<TitleRef[]>([]);
+  const [library, setLibrary] = useState<LibraryGame[]>([]);
   const [tab, setTab] = useState<Tab>("Diary");
   const [customizing, setCustomizing] = useState(false);
   const [menu, setMenu] = useState<null | "report" | "block">(null);
@@ -40,6 +41,7 @@ export default function ProfileView({ username }: { username: string }) {
     api.followCounts(profile.id).then(setCounts);
     api.fetchLists(profile.id).then(setLists);
     api.fetchWatchlist(profile.id).then(setWatchlist);
+    api.fetchLibrary(profile.id).then(setLibrary).catch(() => setLibrary([]));
   }, [profile?.id, version]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { posts, loaded } = usePosts(profile ? { userId: profile.id, limit: 1000 } : null);
@@ -111,7 +113,9 @@ export default function ProfileView({ username }: { username: string }) {
     </div>
   );
 
-  const tabs: Tab[] = ["Diary", "Reviews", "Photos", "Lists", "Want to"];
+  const tabs: Tab[] = library.length ? ["Diary", "Games", "Reviews", "Photos", "Lists", "Want to"] : ["Diary", "Reviews", "Photos", "Lists", "Want to"];
+  const playingNow = library.filter((g) => recentlyPlayed(g)).slice(0, 6);
+  const totalMinutes = library.reduce((a, g) => a + g.minutes, 0);
   const tabBlock = (
     <div key="tabs">
       <div className="tabs scroll-tabs" role="tablist">
@@ -122,7 +126,37 @@ export default function ProfileView({ username }: { username: string }) {
         ))}
       </div>
 
-      {!loaded && tab !== "Lists" && tab !== "Want to" && <div className="empty">Loading…</div>}
+      {!loaded && tab !== "Lists" && tab !== "Want to" && tab !== "Games" && <div className="empty">Loading…</div>}
+
+      {tab === "Games" && (
+        <div style={{ paddingTop: 12 }}>
+          <p className="sub">
+            {library.length} games · {hours(totalMinutes)} played on Steam
+          </p>
+          <div className="revlist">
+            {library.map((g) => (
+              <div className="rev diary-row" key={g.title.key}>
+                <Poster title={g.title} width={44} label={false} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <Link href={titleHref(g.title)} className="inline-title">
+                    {g.title.name}
+                  </Link>
+                  <div className="sub">
+                    {hours(g.minutes)}
+                    {g.lastPlayed ? ` · played ${timeAgo(g.lastPlayed) === "now" ? "just now" : timeAgo(g.lastPlayed) + " ago"}` : ""}
+                    {g.achievementsTotal ? ` · ${g.achievementsDone}/${g.achievementsTotal} achievements` : ""}
+                  </div>
+                </div>
+                {isMe && !logs.some((p) => p.title.key === g.title.key) && (
+                  <Link href={`/log?title=${encodeURIComponent(g.title.key)}`} className="btn small">
+                    Rate
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loaded && tab === "Diary" &&
         (logs.length ? (
@@ -290,6 +324,21 @@ export default function ProfileView({ username }: { username: string }) {
             <LinkIcon size={16} />
             Letterboxd
           </a>
+        )}
+        {playingNow.length > 0 && (
+          <div className="section">
+            <div className="label" style={{ marginBottom: 8 }}>
+              Playing lately
+            </div>
+            <div className="playing">
+              {playingNow.map((g) => (
+                <Link key={g.title.key} href={titleHref(g.title)} className="playing-item">
+                  <PosterArt title={g.title} label={false} />
+                  <span className="sub">{hours(g.minutes)}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         )}
         {sections}
       </div>
