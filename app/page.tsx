@@ -20,7 +20,7 @@ export default function FeedPage() {
       <header className="topbar">
         <h1 className="wordmark">
           <span className="mobile-only">
-            Nook<span>.</span>
+            Nook<span className="dot">.</span>
           </span>
           <span className="desktop-only page-title">Your feed</span>
         </h1>

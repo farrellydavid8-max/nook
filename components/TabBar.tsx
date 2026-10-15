@@ -23,7 +23,7 @@ export default function TabBar() {
   return (
     <nav className={`tabbar${sheet ? " on-sheet" : ""}`} aria-label="Main">
       <Link href="/" className="side-brand">
-        Nook<span>.</span>
+        Nook<span className="dot">.</span>
       </Link>
       {TABS.map(({ href, label, Icon, plus, match }) => {
         const active = match ? path.startsWith(match) : path === href;

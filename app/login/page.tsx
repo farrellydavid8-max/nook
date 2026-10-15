@@ -70,7 +70,7 @@ function LoginForm() {
         </Link>
       </header>
       <h1 className="wordmark" style={{ fontSize: 44 }}>
-        Nook<span>.</span>
+        Nook<span className="dot">.</span>
       </h1>
       <p className="review" style={{ marginTop: 8 }}>
         Everything you watch, play and read, in one place.
