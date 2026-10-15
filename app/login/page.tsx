@@ -63,7 +63,7 @@ function LoginForm() {
   }
 
   return (
-    <section className="screen" aria-label={mode === "signup" ? "Create account" : "Log in"}>
+    <section className="screen narrow" aria-label={mode === "signup" ? "Create account" : "Log in"}>
       <header className="sheethead">
         <Link href="/" className="iconbtn" aria-label="Back to feed">
           <BackIcon />

@@ -66,7 +66,7 @@ function PhotoForm() {
   }
 
   return (
-    <section className="screen" aria-label="New photo post">
+    <section className="screen narrow" aria-label="New photo post">
       <header className="sheethead">
         <Link href="/" className="iconbtn" aria-label="Close">
           <CloseIcon />

@@ -55,7 +55,7 @@ function LogForm() {
   }
 
   return (
-    <form className="screen" onSubmit={save} noValidate aria-label="New log">
+    <form className="screen narrow" onSubmit={save} noValidate aria-label="New log">
       <header className="sheethead">
         <Link href="/" className="linkbtn">
           Cancel

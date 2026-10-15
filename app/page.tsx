@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import PostCard from "@/components/PostCard";
 import SetupNotice from "@/components/SetupNotice";
+import SideRail from "@/components/SideRail";
 import { SearchIcon } from "@/components/Icons";
 import { findTitle, MEDIA, type Medium } from "@/lib/data";
 import { useStore } from "@/lib/store";
@@ -14,17 +15,21 @@ export default function FeedPage() {
   const list = posts.filter((p) => filter === "All" || findTitle(p.title).medium === filter);
 
   return (
+    <div className="feed-layout">
     <section className="screen" aria-label="Feed">
       <header className="topbar">
         <h1 className="wordmark">
-          Nook<span>.</span>
+          <span className="mobile-only">
+            Nook<span>.</span>
+          </span>
+          <span className="desktop-only page-title">Your feed</span>
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <Link href="/title/dune-part-two" className="iconbtn" aria-label="Explore titles">
             <SearchIcon />
           </Link>
           {!loading && !user && configured && (
-            <Link href="/login" className="btn primary" style={{ minHeight: 38 }}>
+            <Link href="/login" className="btn primary mobile-only" style={{ minHeight: 38 }}>
               Log in
             </Link>
           )}
@@ -59,5 +64,7 @@ export default function FeedPage() {
         </>
       )}
     </section>
+    {configured && <SideRail />}
+    </div>
   );
 }

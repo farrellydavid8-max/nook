@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useStore } from "@/lib/store";
 import { CompassIcon, HomeIcon, PhotoIcon, PlusIcon, UserIcon } from "./Icons";
 
 const TABS = [
@@ -12,13 +13,18 @@ const TABS = [
   { href: "/profile", label: "Profile", Icon: UserIcon },
 ];
 
+// On phones this is the bottom tab bar; on wider screens CSS turns it into a left sidebar.
 export default function TabBar() {
   const path = usePathname();
-  // The log and photo screens are full-screen sheets, so they hide the tab bar.
-  if (path === "/log" || path === "/post" || path === "/login") return null;
+  const { user, profile } = useStore();
+  // On phones the log, photo and login screens are full-screen sheets, so the bar hides there.
+  const sheet = path === "/log" || path === "/post" || path === "/login";
 
   return (
-    <nav className="tabbar" aria-label="Main">
+    <nav className={`tabbar${sheet ? " on-sheet" : ""}`} aria-label="Main">
+      <Link href="/" className="side-brand">
+        Nook<span>.</span>
+      </Link>
       {TABS.map(({ href, label, Icon, plus, match }) => {
         const active = match ? path.startsWith(match) : path === href;
         return (
@@ -26,13 +32,25 @@ export default function TabBar() {
             key={label}
             href={href}
             aria-label={label}
-            aria-current={active && !plus ? "page" : undefined}
+            aria-current={active ? "page" : undefined}
             className={`tab${plus ? " plus" : ""}`}
           >
             <Icon size={24} strokeWidth={plus ? 2.2 : 1.8} />
+            <span className="tab-label">{label}</span>
           </Link>
         );
       })}
+      <div className="side-foot">
+        {user && profile ? (
+          <span>
+            Signed in as <strong>{profile.username}</strong>
+          </span>
+        ) : (
+          <Link href="/login" className="btn primary" style={{ width: "100%" }}>
+            Log in or sign up
+          </Link>
+        )}
+      </div>
     </nav>
   );
 }

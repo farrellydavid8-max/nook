@@ -142,7 +142,7 @@ function ProfileView() {
           Customize
         </button>
       </div>
-      <div className="inset">
+      <div className="inset wide">
         <div className="prow">
           <div style={{ border: "4px solid var(--bg)", borderRadius: "50%" }}>
             <Avatar name={profile.username} color={profile.avatar_color} size={80} />

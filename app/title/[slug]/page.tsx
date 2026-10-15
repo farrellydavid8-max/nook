@@ -35,12 +35,12 @@ export default function TitlePage() {
           <BackIcon />
         </Link>
       </div>
-      <div className="inset">
+      <div className="inset wide">
         <div className="thead">
           <div className="poster" style={{ background: t.color }}>
             {t.name}
           </div>
-          <div style={{ paddingTop: 62, minWidth: 0 }}>
+          <div className="thead-text">
             <h1>{t.name}</h1>
             <div className="sub">
               {t.medium} · {t.year} · {t.by}
@@ -117,7 +117,7 @@ export default function TitlePage() {
 
         {tab === "photos" &&
           (photos.length ? (
-            <div className="grid3" style={{ marginTop: 16 }}>
+            <div className="grid3 wall" style={{ marginTop: 16 }}>
               {photos.flatMap((p) => p.shots.map((s, i) => <Shot key={`${p.id}-${i}`} src={s} filter={p.filter} strength={p.strength} />))}
             </div>
           ) : (
