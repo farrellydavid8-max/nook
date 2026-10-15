@@ -1,39 +1,55 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import RequireAuth from "@/components/RequireAuth";
 import { LinkIcon, PaletteIcon } from "@/components/Icons";
-import { Poster, Shot } from "@/components/Media";
-import { CURRENT_USER, MEDIA, findTitle, stars, type FilterName } from "@/lib/data";
+import { Avatar, Poster, Shot } from "@/components/Media";
+import { LETTERBOXD, MEDIA, findTitle, normalizeUrl, stars, type LogPost, type PhotoPost } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 const BANNERS = ["#3B3226", "#2E4A52", "#4A2E3E", "#2F3A2A", "#1F2433"];
 const ACCENTS = ["#E8A33D", "#7FB3D5", "#E08DAE", "#9CC58A", "#C9A7EB"];
-const FAVORITES = ["Perfect Days", "Elden Ring", "Frieren", "Chainsaw Man"];
-const BASE_STATS: Record<string, number> = { Films: 212, Games: 48, Anime: 35, Books: 61 };
-const SAMPLE_GRID: [string, FilterName][] = [["s3", "Fade"], ["s0", "Raw"], ["s5", "Grain"], ["s2", "Dusk"], ["s4", "Mono"], ["s1", "Raw"]];
 
-type Tab = "Photos" | "Diary" | "Lists";
+type Tab = "Photos" | "Diary";
 
-export default function ProfilePage() {
-  const s = useStore();
-  const [tab, setTab] = useState<Tab>("Photos");
-  const [customizing, setCustomizing] = useState(false);
+function ProfileView() {
+  const { user, profile, posts, updateProfile, signOut, toast } = useStore();
+  const [tab, setTab] = useState<Tab>("Diary");
+  const [editing, setEditing] = useState(false);
+  const [bio, setBio] = useState(profile?.bio ?? "");
+  const [lb, setLb] = useState(profile?.letterboxd_url ?? "");
+  const [lbError, setLbError] = useState(false);
 
-  const mine = s.posts.filter((p) => p.user === CURRENT_USER);
-  const logs = mine.filter((p) => p.type === "log");
-  const shots: [string, FilterName][] = [
-    ...mine.flatMap((p) => (p.type === "photo" ? p.shots.map((x) => [x, p.filter] as [string, FilterName]) : [])),
-    ...SAMPLE_GRID,
-  ];
+  if (!profile || !user) {
+    return <div className="empty">Setting up your profile… If this doesn&apos;t go away, try logging out and back in.</div>;
+  }
 
-  const statsBlock = s.showStats && (
+  const logs = posts.filter((p): p is LogPost => p.userId === user.id && p.type === "log");
+  const photoPosts = posts.filter((p): p is PhotoPost => p.userId === user.id && p.type === "photo");
+
+  // Stats: how many things you've logged in each medium
+  const counts = Object.entries(MEDIA)
+    .map(([m, label]) => [label, logs.filter((p) => findTitle(p.title).medium === m).length] as const)
+    .filter(([, n]) => n > 0);
+
+  // Favorites: your highest-rated titles
+  const favorites = [...new Set([...logs].sort((a, b) => b.rating - a.rating).filter((p) => p.rating >= 4).map((p) => p.title))].slice(0, 4);
+
+  const statsBlock = profile.show_stats && (
     <div className="stats" key="stats">
-      {Object.entries(BASE_STATS).map(([k, v]) => (
-        <div key={k}>
-          <b>{v + logs.filter((p) => MEDIA[findTitle(p.title).medium] === k).length}</b>
-          <span>{k}</span>
-        </div>
-      ))}
+      {counts.length ? (
+        counts.map(([k, v]) => (
+          <div key={k}>
+            <b>{v}</b>
+            <span>{k}</span>
+          </div>
+        ))
+      ) : (
+        <p className="sub" style={{ gridColumn: "1 / -1" }}>
+          Your stats appear here as you log things.
+        </p>
+      )}
     </div>
   );
 
@@ -42,105 +58,150 @@ export default function ProfilePage() {
       <div className="label" style={{ marginBottom: 8 }}>
         Favorites
       </div>
-      <div className="favs">
-        {FAVORITES.map((t) => (
-          <Poster key={t} title={t} width="auto" />
-        ))}
-      </div>
+      {favorites.length ? (
+        <div className="favs">
+          {favorites.map((t) => (
+            <Poster key={t} title={t} width="auto" />
+          ))}
+        </div>
+      ) : (
+        <p className="sub">Anything you rate 4 stars or more shows up here.</p>
+      )}
     </div>
   );
 
   const tabBlock = (
     <div key="tabs">
       <div className="tabs" role="tablist">
-        {(["Photos", "Diary", "Lists"] as Tab[]).map((t) => (
+        {(["Diary", "Photos"] as Tab[]).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
             {t}
           </button>
         ))}
       </div>
-      {tab === "Photos" && (
-        <div className="pgrid">
-          {shots.map(([x, f], i) => (
-            <Shot key={i} src={x} filter={f} />
-          ))}
-        </div>
-      )}
-      {tab === "Diary" && (
-        <div className="revlist">
-          {logs.map(
-            (p) =>
-              p.type === "log" && (
-                <div className="rev" key={p.id} style={{ alignItems: "center" }}>
-                  <Poster title={p.title} width={40} label={false} />
-                  <div style={{ minWidth: 0 }}>
-                    <strong>{p.title}</strong>
-                    <div className="sub">
-                      {findTitle(p.title).medium} · {p.time} · <span style={{ color: "var(--accent)" }}>{stars(p.rating)}</span>
-                    </div>
+      {tab === "Photos" &&
+        (photoPosts.length ? (
+          <div className="pgrid">
+            {photoPosts.flatMap((p) => p.shots.map((s, i) => <Shot key={`${p.id}-${i}`} src={s} filter={p.filter} strength={p.strength} />))}
+          </div>
+        ) : (
+          <div className="empty">
+            No photos yet. <Link href="/post">Post your first one.</Link>
+          </div>
+        ))}
+      {tab === "Diary" &&
+        (logs.length ? (
+          <div className="revlist">
+            {logs.map((p) => (
+              <div className="rev" key={p.id} style={{ alignItems: "center" }}>
+                <Poster title={p.title} width={40} label={false} />
+                <div style={{ minWidth: 0 }}>
+                  <strong>{p.title}</strong>
+                  <div className="sub">
+                    {findTitle(p.title).medium} · {p.time}
+                    {p.rating > 0 && (
+                      <>
+                        {" · "}
+                        <span style={{ color: "var(--accent)" }}>{stars(p.rating)}</span>
+                      </>
+                    )}
                   </div>
                 </div>
-              )
-          )}
-        </div>
-      )}
-      {tab === "Lists" && (
-        <div className="revlist">
-          <div>
-            <strong>Rainy day games</strong>
-            <div className="sub">12 titles</div>
+              </div>
+            ))}
           </div>
-          <div>
-            <strong>Manga that made me cry</strong>
-            <div className="sub">9 titles</div>
+        ) : (
+          <div className="empty">
+            Nothing logged yet. <Link href="/log">Log your first title.</Link>
           </div>
-        </div>
-      )}
+        ))}
     </div>
   );
 
-  const sections = s.layout === "favorites" ? [statsBlock, favBlock, tabBlock] : [tabBlock, statsBlock, favBlock];
+  const sections = profile.layout === "favorites" ? [statsBlock, favBlock, tabBlock] : [tabBlock, statsBlock, favBlock];
+
+  async function saveDetails() {
+    const link = lb.trim();
+    if (link && !LETTERBOXD.test(link)) return setLbError(true);
+    const problem = await updateProfile({ bio: bio.trim().slice(0, 160), letterboxd_url: link ? normalizeUrl(link) : null });
+    if (problem) return toast(problem);
+    setEditing(false);
+    toast("Profile saved");
+  }
+
+  async function set(changes: Parameters<typeof updateProfile>[0]) {
+    const problem = await updateProfile(changes);
+    if (problem) toast(problem);
+  }
 
   return (
-    <section aria-label="Profile">
+    <section aria-label="Your profile">
       <div className="banner">
-        <button className="btn" onClick={() => setCustomizing(true)}>
+        <button className="btn" onClick={() => setEditing(true)}>
           <PaletteIcon size={16} />
           Customize
         </button>
       </div>
       <div className="inset">
         <div className="prow">
-          <div className="bigav">{CURRENT_USER[0].toUpperCase()}</div>
-          <button className="btn" onClick={() => s.toast("Editing name and bio comes next")}>
-            Edit profile
+          <div style={{ border: "4px solid var(--bg)", borderRadius: "50%" }}>
+            <Avatar name={profile.username} color={profile.avatar_color} size={80} />
+          </div>
+          <button className="btn" onClick={signOut}>
+            Log out
           </button>
         </div>
-        <h1 className="pname">{CURRENT_USER}</h1>
-        <p className="review" style={{ marginTop: 4 }}>
-          Slow cinema, cozy games, and too much manga.
-        </p>
-        <a className="lb plain" href="https://letterboxd.com" target="_blank" rel="noopener noreferrer">
-          <LinkIcon size={16} />
-          Letterboxd linked
-        </a>
+        <h1 className="pname">{profile.username}</h1>
+        {profile.bio && (
+          <p className="review" style={{ marginTop: 4 }}>
+            {profile.bio}
+          </p>
+        )}
+        {profile.letterboxd_url && (
+          <a className="lb plain" href={profile.letterboxd_url} target="_blank" rel="noopener noreferrer">
+            <LinkIcon size={16} />
+            Letterboxd
+          </a>
+        )}
         {sections}
       </div>
 
-      {customizing && (
+      {editing && (
         <>
-          <div className="scrim" onClick={() => setCustomizing(false)} />
+          <div className="scrim" onClick={() => setEditing(false)} />
           <div className="drawer" role="dialog" aria-label="Customize profile">
             <div className="sheethead">
               <h1>Customize profile</h1>
-              <button className="pill" onClick={() => setCustomizing(false)} autoFocus>
+              <button className="pill" onClick={saveDetails} autoFocus>
                 Done
               </button>
             </div>
-            <div className="label">Banner</div>
+
+            <label className="field" htmlFor="pf-bio" style={{ marginTop: 0 }}>
+              Bio
+              <textarea id="pf-bio" rows={2} maxLength={160} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="What are you into?" />
+            </label>
+            <label className="field" htmlFor="pf-lb">
+              Letterboxd profile
+              <input
+                id="pf-lb"
+                inputMode="url"
+                placeholder="letterboxd.com/yourname"
+                value={lb}
+                onChange={(e) => {
+                  setLb(e.target.value);
+                  setLbError(false);
+                }}
+              />
+              {lbError && <span className="err">Paste a link that starts with letterboxd.com</span>}
+            </label>
+
+            <div className="label" style={{ marginTop: 16 }}>
+              Banner
+            </div>
             <div className="swatches">
               {BANNERS.map((c) => (
-                <button key={c} className="sw" style={{ background: c }} aria-label={`Banner ${c}`} aria-pressed={s.banner === c} onClick={() => s.setBanner(c)} />
+                <button key={c} className="sw" style={{ background: c }} aria-label={`Banner ${c}`} aria-pressed={profile.banner === c} onClick={() => set({ banner: c })} />
               ))}
             </div>
             <div className="label" style={{ marginTop: 16 }}>
@@ -148,27 +209,35 @@ export default function ProfilePage() {
             </div>
             <div className="swatches">
               {ACCENTS.map((c) => (
-                <button key={c} className="sw" style={{ background: c }} aria-label={`Accent ${c}`} aria-pressed={s.accent === c} onClick={() => s.setAccent(c)} />
+                <button key={c} className="sw" style={{ background: c }} aria-label={`Accent ${c}`} aria-pressed={profile.accent === c} onClick={() => set({ accent: c })} />
               ))}
             </div>
             <div className="label" style={{ marginTop: 16 }}>
               Layout
             </div>
             <div className="chips" style={{ paddingTop: 8 }}>
-              <button className="chip" aria-pressed={s.layout === "favorites"} onClick={() => s.setLayout("favorites")}>
+              <button className="chip" aria-pressed={profile.layout === "favorites"} onClick={() => set({ layout: "favorites" })}>
                 Favorites first
               </button>
-              <button className="chip" aria-pressed={s.layout === "photos"} onClick={() => s.setLayout("photos")}>
-                Photos first
+              <button className="chip" aria-pressed={profile.layout === "photos"} onClick={() => set({ layout: "photos" })}>
+                Diary first
               </button>
             </div>
             <label className="check" htmlFor="show-stats">
-              <input id="show-stats" type="checkbox" checked={s.showStats} onChange={(e) => s.setShowStats(e.target.checked)} />
+              <input id="show-stats" type="checkbox" checked={profile.show_stats} onChange={(e) => set({ show_stats: e.target.checked })} />
               Show stats
             </label>
           </div>
         </>
       )}
     </section>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <RequireAuth>
+      <ProfileView />
+    </RequireAuth>
   );
 }

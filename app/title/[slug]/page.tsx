@@ -5,10 +5,10 @@ import { notFound, useParams } from "next/navigation";
 import { useState } from "react";
 import { BackIcon } from "@/components/Icons";
 import { Avatar, Shot } from "@/components/Media";
-import { slugify, stars, titleBySlug } from "@/lib/data";
+import { slugify, stars, titleBySlug, type LogPost, type PhotoPost } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
-type Tab = "reviews" | "photos" | "lists";
+type Tab = "reviews" | "photos";
 
 export default function TitlePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -17,15 +17,14 @@ export default function TitlePage() {
   const t = titleBySlug(slug);
   if (!t) notFound();
 
-  const reviews = posts.filter((p) => p.type === "log" && p.title === t.name);
-  const photos = posts.filter((p) => p.type === "photo" && p.title === t.name);
-  const avg = reviews.length
-    ? (reviews.reduce((a, p) => a + (p.type === "log" ? p.rating : 0), 0) / reviews.length).toFixed(1)
-    : "–";
+  const logs = posts.filter((p): p is LogPost => p.type === "log" && p.title === t.name);
+  const rated = logs.filter((p) => p.rating > 0);
+  const photos = posts.filter((p): p is PhotoPost => p.type === "photo" && p.title === t.name);
+  const avg = rated.length ? (rated.reduce((a, p) => a + p.rating, 0) / rated.length).toFixed(1) : "–";
 
   // Rating spread in half-star steps, for the little bar chart
   const counts = Array(10).fill(0);
-  reviews.forEach((p) => p.type === "log" && p.rating > 0 && counts[Math.round(p.rating * 2) - 1]++);
+  rated.forEach((p) => counts[Math.round(p.rating * 2) - 1]++);
   const max = Math.max(1, ...counts);
   const wanted = wants.has(t.name);
 
@@ -63,14 +62,14 @@ export default function TitlePage() {
           >
             {wanted ? "On your list" : "Want to"}
           </button>
-          <button className="btn" onClick={() => toast("Added to “Comfort rewatches”")}>
-            Add to list
-          </button>
+          <Link href={`/post?title=${slugify(t.name)}`} className="btn">
+            Post photos
+          </Link>
         </div>
 
         <div className="dist">
           <div>
-            <div className="label">Friends&apos; average</div>
+            <div className="label">Average on Nook</div>
             <div className="big">{avg}</div>
           </div>
           <div className="bars" aria-hidden="true">
@@ -79,61 +78,51 @@ export default function TitlePage() {
             ))}
           </div>
         </div>
+        <div className="sub">
+          {rated.length} {rated.length === 1 ? "rating" : "ratings"}
+        </div>
 
         <div className="tabs" role="tablist">
-          {(["reviews", "photos", "lists"] as Tab[]).map((k) => (
+          {(["reviews", "photos"] as Tab[]).map((k) => (
             <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
-              {k[0].toUpperCase() + k.slice(1)}
+              {k === "reviews" ? `Reviews (${logs.length})` : `Photos (${photos.reduce((a, p) => a + p.shots.length, 0)})`}
             </button>
           ))}
         </div>
 
         {tab === "reviews" &&
-          (reviews.length ? (
+          (logs.length ? (
             <div className="revlist">
-              {reviews.map(
-                (p) =>
-                  p.type === "log" && (
-                    <div className="rev" key={p.id}>
-                      <Avatar user={p.user} />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 14 }}>
-                          <strong>{p.user}</strong>{" "}
-                          <span className="stars" style={{ fontSize: 13 }}>
-                            {stars(p.rating)}
-                          </span>
-                        </div>
-                        {p.text && !p.spoiler && <p className="review">{p.text}</p>}
-                      </div>
+              {logs.map((p) => (
+                <div className="rev" key={p.id}>
+                  <Avatar name={p.user} color={p.avatarColor} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 14 }}>
+                      <strong>{p.user}</strong>{" "}
+                      {p.rating > 0 && (
+                        <span className="stars" style={{ fontSize: 13 }}>
+                          {stars(p.rating)}
+                        </span>
+                      )}{" "}
+                      <span className="meta">· {p.time}</span>
                     </div>
-                  )
-              )}
+                    {p.spoiler ? <p className="review meta">Review hidden: contains spoilers</p> : p.text && <p className="review">{p.text}</p>}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="empty">No reviews from friends yet. Be the first to log it.</div>
+            <div className="empty">No reviews yet. Be the first to log it.</div>
           ))}
 
         {tab === "photos" &&
           (photos.length ? (
             <div className="grid3" style={{ marginTop: 16 }}>
-              {photos.flatMap((p) => (p.type === "photo" ? p.shots.map((s, i) => <Shot key={`${p.id}-${i}`} src={s} filter={p.filter} />) : []))}
+              {photos.flatMap((p) => p.shots.map((s, i) => <Shot key={`${p.id}-${i}`} src={s} filter={p.filter} strength={p.strength} />))}
             </div>
           ) : (
             <div className="empty">No photos yet. Post a screenshot or a shot of your copy.</div>
           ))}
-
-        {tab === "lists" && (
-          <div className="revlist">
-            <div>
-              <strong>Comfort rewatches</strong>
-              <div className="sub">by sol · 24 titles</div>
-            </div>
-            <div>
-              <strong>Best of {t.year}</strong>
-              <div className="sub">by ade · 15 titles</div>
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );

@@ -9,11 +9,20 @@ Log, review and share everything you watch, play and read: films, TV, games, ani
 - `app/log/page.tsx` — logging and reviewing, with an optional Letterboxd link
 - `app/post/page.tsx` — photo posts with filters
 - `app/profile/page.tsx` — the customizable profile
-- `lib/data.ts` — sample titles and posts
-- `lib/store.tsx` — shared app state (in memory for now)
+- `app/login/page.tsx` — sign up and log in
+- `lib/data.ts` — types and the starter title list
+- `lib/store.tsx` — app state, reading and writing Supabase
+- `lib/supabase.ts` — the Supabase connection
+- `supabase/schema.sql` — database tables, security rules and photo storage
 - `app/globals.css` — the whole look
 
-Right now everything uses sample data and resets on reload. Next steps: accounts, a database and photo storage with Supabase, then real title search.
+## Setup
+
+1. In Supabase → SQL Editor, run `supabase/schema.sql`.
+2. In Supabase → Authentication → URL Configuration, set the Site URL to your live site.
+3. In Vercel → Settings → Environment Variables, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, then redeploy.
+
+Next up: real title search (TMDB, IGDB, AniList, Open Library), following friends, and public profiles.
 
 ## Run it on your computer
 

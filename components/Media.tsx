@@ -1,42 +1,32 @@
 // Small building blocks: posters, photo tiles and avatars.
 
 import Link from "next/link";
-import { AVATAR_COLORS, FILTERS, findTitle, slugify, type FilterName } from "@/lib/data";
+import { FILTERS, findTitle, slugify, type FilterName } from "@/lib/data";
 
 export function Poster({ title, width, label = true }: { title: string; width?: number | string; label?: boolean }) {
   const t = findTitle(title);
   return (
-    <Link
-      href={`/title/${slugify(title)}`}
-      className="poster"
-      style={{ background: t.color, width }}
-      aria-label={`Open ${title}`}
-    >
+    <Link href={`/title/${slugify(title)}`} className="poster" style={{ background: t.color, width }} aria-label={`Open ${title}`}>
       {label ? title : null}
     </Link>
   );
 }
 
-export function Shot({ src, filter }: { src: string; filter: FilterName }) {
-  const isImage = src.startsWith("blob:") || src.startsWith("http") || src.startsWith("data:");
+// A photo with its filter. The filtered copy sits on top at the chosen strength.
+export function Shot({ src, filter, strength = 100 }: { src: string; filter: FilterName; strength?: number }) {
+  const image = { backgroundImage: `url("${src}")` };
   return (
-    <div
-      className={`shot ${isImage ? "" : src}`}
-      style={{
-        backgroundImage: isImage ? `url("${src}")` : undefined,
-        filter: FILTERS[filter],
-      }}
-    />
+    <div className="shot">
+      <div className="layer" style={image} />
+      <div className="layer" style={{ ...image, filter: FILTERS[filter], opacity: strength / 100 }} />
+    </div>
   );
 }
 
-export function Avatar({ user, size = 32 }: { user: string; size?: number }) {
+export function Avatar({ name, color, size = 32 }: { name: string; color: string; size?: number }) {
   return (
-    <div
-      className="av"
-      style={{ background: AVATAR_COLORS[user] ?? "#4A4A52", width: size, height: size }}
-    >
-      {user[0].toUpperCase()}
+    <div className="av" style={{ background: color, width: size, height: size }} aria-hidden="true">
+      {name[0]?.toUpperCase()}
     </div>
   );
 }

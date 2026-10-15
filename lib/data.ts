@@ -1,5 +1,5 @@
-// Sample data for the first version of Nook.
-// Later this is replaced by a real database (Supabase) and real catalog search.
+// Shared types, the starter title catalog and small helpers.
+// The catalog is a short built-in list for now; real search (TMDB, IGDB, AniList…) replaces it later.
 
 export type Medium = "Film" | "TV" | "Game" | "Anime" | "Book" | "Manga" | "Comic";
 
@@ -12,32 +12,57 @@ export type Title = {
   progress: string;
 };
 
-export type LogPost = {
+export const FILTERS = {
+  Raw: "none",
+  Dusk: "sepia(.4) saturate(1.4) hue-rotate(-12deg) brightness(.95)",
+  Grain: "contrast(1.25) saturate(.8) brightness(.95)",
+  Fade: "contrast(.78) brightness(1.12) saturate(.7)",
+  Mono: "grayscale(1) contrast(1.1)",
+} as const;
+export type FilterName = keyof typeof FILTERS;
+
+type PostBase = {
   id: number;
-  type: "log";
+  userId: string;
   user: string;
+  avatarColor: string;
   title: string;
+  time: string;
+  likes: number;
+  liked: boolean;
+};
+
+export type LogPost = PostBase & {
+  type: "log";
   rating: number;
   text: string;
   letterboxd?: string;
   spoiler?: boolean;
-  time: string;
-  likes: number;
+  status?: string;
+  progress?: string;
 };
 
-export type PhotoPost = {
-  id: number;
+export type PhotoPost = PostBase & {
   type: "photo";
-  user: string;
-  title: string;
-  shots: string[]; // scene class names (s0–s5) or uploaded image URLs
+  shots: string[]; // public image URLs
   filter: FilterName;
+  strength: number;
   caption: string;
-  time: string;
-  likes: number;
 };
 
 export type Post = LogPost | PhotoPost;
+
+export type Profile = {
+  id: string;
+  username: string;
+  bio: string;
+  avatar_color: string;
+  accent: string;
+  banner: string;
+  layout: "favorites" | "photos";
+  show_stats: boolean;
+  letterboxd_url: string | null;
+};
 
 export const MEDIA: Record<Medium, string> = {
   Film: "Films",
@@ -76,36 +101,17 @@ export const slugify = (s: string) =>
 export const findTitle = (name: string) => TITLES.find((t) => t.name === name) ?? TITLES[0];
 export const titleBySlug = (slug: string) => TITLES.find((t) => slugify(t.name) === slug);
 
-export const AVATAR_COLORS: Record<string, string> = {
-  mira: "#5B4A6E",
-  jun: "#3F5A3A",
-  sol: "#6E4A4A",
-  ade: "#4A5A6E",
-  kai: "#6E5A3A",
-  rue: "#5A3A5A",
-};
-
-export const FILTERS = {
-  Raw: "none",
-  Dusk: "sepia(.4) saturate(1.4) hue-rotate(-12deg) brightness(.95)",
-  Grain: "contrast(1.25) saturate(.8) brightness(.95)",
-  Fade: "contrast(.78) brightness(1.12) saturate(.7)",
-  Mono: "grayscale(1) contrast(1.1)",
-} as const;
-export type FilterName = keyof typeof FILTERS;
-
-export const CURRENT_USER = "mira";
-
-export const SAMPLE_POSTS: Post[] = [
-  { id: 1, type: "log", user: "mira", title: "Perfect Days", rating: 4.5, text: "Made me want to clean my bathroom and listen to cassettes. Quietly perfect.", letterboxd: "https://letterboxd.com", time: "2h", likes: 12 },
-  { id: 2, type: "photo", user: "jun", title: "Elden Ring", shots: ["s0", "s1", "s2"], filter: "Dusk", caption: "Golden hour in Limgrave", time: "5h", likes: 31 },
-  { id: 3, type: "log", user: "sol", title: "Frieren", rating: 5, text: "A show about noticing things too late. Cried at a flower field. Twice.", time: "8h", likes: 20 },
-  { id: 4, type: "log", user: "ade", title: "Piranesi", rating: 4, text: "Read it in two sittings. The house is the best character.", time: "1d", likes: 7 },
-  { id: 5, type: "photo", user: "kai", title: "Chainsaw Man", shots: ["s4", "s5", "s3"], filter: "Mono", caption: "Volume 11 haul", time: "1d", likes: 18 },
-  { id: 6, type: "log", user: "rue", title: "The Bear", rating: 3.5, text: "Season three slowed down. Still the most stressful show I love.", time: "2d", likes: 5 },
-  { id: 7, type: "log", user: "jun", title: "Dune: Part Two", rating: 3.5, text: "Stunning to look at. Read the book first and still want more of the quiet parts.", time: "3d", likes: 9 },
-  { id: 8, type: "log", user: "mira", title: "Dune: Part Two", rating: 5, text: "The sound in the sandworm scene made the seats shake. See it as big as you can.", time: "4d", likes: 22 },
-  { id: 9, type: "log", user: "rue", title: "Saga", rating: 4.5, text: "Picked it back up after the hiatus. Still hurts in the best way.", time: "5d", likes: 4 },
-];
-
 export const stars = (r: number) => "★".repeat(Math.floor(r)) + (r % 1 ? "½" : "");
+
+export function timeAgo(iso: string) {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "now";
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  if (s < 604800) return `${Math.floor(s / 86400)}d`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Accepts full Letterboxd links and their short boxd.it links
+export const LETTERBOXD = /^(https?:\/\/)?(www\.)?(letterboxd\.com|boxd\.it)\//i;
+export const normalizeUrl = (u: string) => (u.startsWith("http") ? u : `https://${u}`);

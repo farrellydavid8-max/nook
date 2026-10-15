@@ -7,33 +7,26 @@ import { HeartIcon, LinkIcon } from "./Icons";
 import { Avatar, Poster, Shot } from "./Media";
 
 export default function PostCard({ post }: { post: Post }) {
-  const { liked, toggleLike } = useStore();
+  const { toggleLike } = useStore();
   const t = findTitle(post.title);
-  const isLiked = liked.has(post.id);
-  const count = post.likes + (isLiked ? 1 : 0);
   const titleHref = `/title/${slugify(post.title)}`;
 
   const likeButton = (
-    <button
-      className="like"
-      aria-pressed={isLiked}
-      aria-label={`Like, ${count} likes`}
-      onClick={() => toggleLike(post.id)}
-    >
+    <button className="like" aria-pressed={post.liked} aria-label={`Like, ${post.likes} likes`} onClick={() => toggleLike(post)}>
       <HeartIcon size={18} />
-      {count}
+      {post.likes}
     </button>
   );
 
   const action =
     post.type === "photo"
-      ? `posted ${post.shots.length} ${post.shots.length > 1 ? "shots" : "shot"}`
+      ? `posted ${post.shots.length} ${post.shots.length === 1 ? "shot" : "shots"}`
       : `logged ${t.medium === "Anime" ? "an anime" : "a " + t.medium.toLowerCase()}`;
 
   return (
     <article className="post">
       <div className="who">
-        <Avatar user={post.user} />
+        <Avatar name={post.user} color={post.avatarColor} />
         <div>
           <strong>{post.user}</strong>{" "}
           <span className="meta">
@@ -44,12 +37,9 @@ export default function PostCard({ post }: { post: Post }) {
 
       {post.type === "photo" ? (
         <>
-          <div
-            className="grid3"
-            style={{ gridTemplateColumns: `repeat(${Math.min(post.shots.length, 3)}, minmax(0, 1fr))` }}
-          >
+          <div className="grid3" style={{ gridTemplateColumns: `repeat(${Math.min(post.shots.length, 3)}, minmax(0, 1fr))` }}>
             {post.shots.map((s, i) => (
-              <Shot key={i} src={s} filter={post.filter} />
+              <Shot key={i} src={s} filter={post.filter} strength={post.strength} />
             ))}
           </div>
           {post.caption && <p className="review">{post.caption}</p>}
@@ -74,15 +64,14 @@ export default function PostCard({ post }: { post: Post }) {
               </Link>
               <div className="sub">
                 {t.medium} · {t.year}
+                {post.status && post.status !== "Finished" ? ` · ${post.status}` : ""}
               </div>
-              <div className="stars" aria-label={`${post.rating} stars`}>
-                {stars(post.rating)}
-              </div>
-              {post.spoiler ? (
-                <p className="review meta">Review hidden: contains spoilers</p>
-              ) : (
-                post.text && <p className="review">{post.text}</p>
+              {post.rating > 0 && (
+                <div className="stars" aria-label={`${post.rating} stars`}>
+                  {stars(post.rating)}
+                </div>
               )}
+              {post.spoiler ? <p className="review meta">Review hidden: contains spoilers</p> : post.text && <p className="review">{post.text}</p>}
             </div>
           </div>
           {post.letterboxd && (

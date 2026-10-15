@@ -3,48 +3,53 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { CURRENT_USER, PROGRESS_LABEL, TITLES, findTitle, titleBySlug } from "@/lib/data";
+import RequireAuth from "@/components/RequireAuth";
+import { LETTERBOXD, PROGRESS_LABEL, TITLES, findTitle, normalizeUrl, titleBySlug } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 const STATUSES = ["In progress", "Finished", "Revisit", "Dropped"];
 
-// Accepts full Letterboxd links and their short boxd.it links
-const LETTERBOXD = /^(https?:\/\/)?(www\.)?(letterboxd\.com|boxd\.it)\//i;
-
 function LogForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const { addPost, toast } = useStore();
+  const { addLog, toast } = useStore();
 
-  const initial = titleBySlug(params.get("title") ?? "")?.name ?? "Frieren";
+  const initial = titleBySlug(params.get("title") ?? "")?.name ?? TITLES[0].name;
   const [title, setTitle] = useState(initial);
   const [status, setStatus] = useState("Finished");
   const [progress, setProgress] = useState(findTitle(initial).progress);
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [rating, setRating] = useState(4);
+  const [rating, setRating] = useState(0);
   const [text, setText] = useState("");
   const [lb, setLb] = useState("");
   const [lbError, setLbError] = useState(false);
   const [spoiler, setSpoiler] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const t = findTitle(title);
 
-  function save(e: React.FormEvent) {
+  async function save(e: React.FormEvent) {
     e.preventDefault();
     const link = lb.trim();
     if (link && !LETTERBOXD.test(link)) {
       setLbError(true);
       return;
     }
-    addPost({
-      type: "log",
-      user: CURRENT_USER,
+    setSaving(true);
+    setError(null);
+    const problem = await addLog({
       title,
+      status,
+      progress,
+      loggedOn: date,
       rating,
-      text: text.trim(),
-      letterboxd: link ? (link.startsWith("http") ? link : `https://${link}`) : undefined,
+      review: text.trim(),
+      letterboxd: link ? normalizeUrl(link) : undefined,
       spoiler,
     });
+    setSaving(false);
+    if (problem) return setError(problem);
     toast(`Logged ${title}`);
     router.push("/");
   }
@@ -56,13 +61,19 @@ function LogForm() {
           Cancel
         </Link>
         <h1>New log</h1>
-        <button type="submit" className="pill">
-          Save
+        <button type="submit" className="pill" disabled={saving}>
+          {saving ? "Saving…" : "Save"}
         </button>
       </header>
 
+      {error && (
+        <p className="err" role="alert" style={{ fontSize: 14 }}>
+          {error}
+        </p>
+      )}
+
       <label className="field" htmlFor="log-title">
-        What did you finish?
+        What are you logging?
         <select
           id="log-title"
           value={title}
@@ -72,7 +83,9 @@ function LogForm() {
           }}
         >
           {TITLES.map((x) => (
-            <option key={x.name}>{x.name}</option>
+            <option key={x.name} value={x.name}>
+              {x.name} ({x.medium})
+            </option>
           ))}
         </select>
       </label>
@@ -102,9 +115,7 @@ function LogForm() {
       <div className="field">
         <span>
           Rating{" "}
-          <span style={{ color: "var(--fg)" }}>
-            {rating ? `${rating.toFixed(1)} · tap a star again for a half` : "Not rated"}
-          </span>
+          <span style={{ color: "var(--fg)" }}>{rating ? `${rating.toFixed(1)} · tap a star again for a half` : "Tap to rate"}</span>
         </span>
         <div className="starpick" role="group" aria-label="Rating">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -123,7 +134,7 @@ function LogForm() {
 
       <label className="field" htmlFor="log-review">
         Review
-        <textarea id="log-review" rows={4} placeholder="What stuck with you?" value={text} onChange={(e) => setText(e.target.value)} />
+        <textarea id="log-review" rows={4} maxLength={4000} placeholder="What stuck with you?" value={text} onChange={(e) => setText(e.target.value)} />
       </label>
 
       <label className="field" htmlFor="log-lb">
@@ -153,8 +164,10 @@ function LogForm() {
 
 export default function LogPage() {
   return (
-    <Suspense>
-      <LogForm />
-    </Suspense>
+    <RequireAuth>
+      <Suspense>
+        <LogForm />
+      </Suspense>
+    </RequireAuth>
   );
 }

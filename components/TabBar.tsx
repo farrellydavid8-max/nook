@@ -15,7 +15,7 @@ const TABS = [
 export default function TabBar() {
   const path = usePathname();
   // The log and photo screens are full-screen sheets, so they hide the tab bar.
-  if (path === "/log" || path === "/post") return null;
+  if (path === "/log" || path === "/post" || path === "/login") return null;
 
   return (
     <nav className="tabbar" aria-label="Main">
