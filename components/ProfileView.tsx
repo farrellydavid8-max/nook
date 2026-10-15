@@ -256,7 +256,7 @@ export default function ProfileView({ username }: { username: string }) {
 
   return (
     <section aria-label={`${profile.username}'s profile`}>
-      <div className="banner" style={{ background: profile.banner }}>
+      <div className="banner" style={profile.banner_url ? { backgroundColor: profile.banner, backgroundImage: `url("${profile.banner_url}")` } : { background: profile.banner }}>
         {isMe && (
           <button className="btn" onClick={() => setCustomizing(true)}>
             <PaletteIcon size={16} />
@@ -267,7 +267,7 @@ export default function ProfileView({ username }: { username: string }) {
       <div className="inset wide">
         <div className="prow">
           <div style={{ border: "4px solid var(--bg)", borderRadius: "50%" }}>
-            <Avatar name={profile.username} color={profile.avatar_color} size={80} />
+            <Avatar name={profile.username} color={profile.avatar_color} url={profile.avatar_url} size={80} />
           </div>
           <div className="prow-actions">
             {isMe ? (

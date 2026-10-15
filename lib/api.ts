@@ -19,6 +19,10 @@ import { getSupabase } from "./supabase";
 
 const sb = () => getSupabase();
 
+// Until update-7.sql adds avatar_url, ask for the same data without it
+const missingColumn = (e: { code?: string } | null) => e?.code === "42703" || e?.code === "PGRST204";
+const legacy = (select: string) => select.replace(/,avatar_url/g, "");
+
 /* ---------- Titles ---------- */
 
 export type TitleRow = {
@@ -67,13 +71,13 @@ type PostRow = TitleRow & {
   filter_strength: number | null;
   caption: string | null;
   created_at: string;
-  author: { username: string; avatar_color: string } | null;
+  author: { username: string; avatar_color: string; avatar_url: string | null } | null;
   likes: { user_id: string }[];
   comments: { count: number }[];
 };
 
 const POST_SELECT =
-  "id,user_id,type,title,title_key,medium,year,creator,poster_url,status,progress,logged_on,rating,review,letterboxd_url,spoiler,rewatch,photos,filter,filter_strength,caption,created_at,author:profiles(username,avatar_color),likes(user_id),comments(count)";
+  "id,user_id,type,title,title_key,medium,year,creator,poster_url,status,progress,logged_on,rating,review,letterboxd_url,spoiler,rewatch,photos,filter,filter_strength,caption,created_at,author:profiles(username,avatar_color,avatar_url),likes(user_id),comments(count)";
 
 function toPost(r: PostRow, me?: string): Post {
   const base = {
@@ -81,6 +85,7 @@ function toPost(r: PostRow, me?: string): Post {
     userId: r.user_id,
     user: r.author?.username ?? "someone",
     avatarColor: r.author?.avatar_color ?? "#4A4A52",
+    avatarUrl: r.author?.avatar_url ?? undefined,
     title: rowToTitle(r),
     time: timeAgo(r.created_at),
     createdAt: r.created_at,
@@ -115,16 +120,20 @@ function toPost(r: PostRow, me?: string): Post {
 export type PostQuery = { userIds?: string[]; userId?: string; titleKey?: string; postId?: number; limit?: number; since?: string; until?: string };
 
 export async function fetchPosts(q: PostQuery, me?: string): Promise<Post[]> {
-  let query = sb().from("posts").select(POST_SELECT).order("created_at", { ascending: false }).limit(q.limit ?? 60);
-  if (q.userIds) query = query.in("user_id", q.userIds.length ? q.userIds : ["00000000-0000-0000-0000-000000000000"]);
-  if (q.userId) query = query.eq("user_id", q.userId);
-  if (q.titleKey) query = query.eq("title_key", q.titleKey);
-  if (q.postId) query = query.eq("id", q.postId);
-  if (q.since) query = query.gte("created_at", q.since);
-  if (q.until) query = query.lt("created_at", q.until);
-  const { data, error } = await query;
-  if (error) throw error;
-  return (data as unknown as PostRow[]).map((r) => toPost(r, me));
+  const build = (select: string) => {
+    let query = sb().from("posts").select(select).order("created_at", { ascending: false }).limit(q.limit ?? 60);
+    if (q.userIds) query = query.in("user_id", q.userIds.length ? q.userIds : ["00000000-0000-0000-0000-000000000000"]);
+    if (q.userId) query = query.eq("user_id", q.userId);
+    if (q.titleKey) query = query.eq("title_key", q.titleKey);
+    if (q.postId) query = query.eq("id", q.postId);
+    if (q.since) query = query.gte("created_at", q.since);
+    if (q.until) query = query.lt("created_at", q.until);
+    return query;
+  };
+  let res: { data: unknown; error: { code?: string } | null } = await build(POST_SELECT);
+  if (missingColumn(res.error)) res = await build(legacy(POST_SELECT));
+  if (res.error) throw res.error;
+  return (res.data as PostRow[]).map((r) => toPost(r, me));
 }
 
 export async function setLike(postId: number, me: string, like: boolean) {
@@ -151,21 +160,22 @@ export async function updatePost(id: number, changes: Record<string, unknown>) {
 
 /* ---------- Comments ---------- */
 
-type CommentRow = { id: number; post_id: number; user_id: string; body: string; created_at: string; author: { username: string; avatar_color: string } | null };
+type CommentRow = { id: number; post_id: number; user_id: string; body: string; created_at: string; author: { username: string; avatar_color: string; avatar_url: string | null } | null };
 
 export async function fetchComments(postId: number): Promise<CommentItem[]> {
-  const { data, error } = await sb()
-    .from("comments")
-    .select("id,post_id,user_id,body,created_at,author:profiles(username,avatar_color)")
-    .eq("post_id", postId)
-    .order("created_at");
-  if (error) throw error;
+  const select = "id,post_id,user_id,body,created_at,author:profiles(username,avatar_color,avatar_url)";
+  const get = (sel: string) => sb().from("comments").select(sel).eq("post_id", postId).order("created_at");
+  let res: { data: unknown; error: { code?: string } | null } = await get(select);
+  if (missingColumn(res.error)) res = await get(legacy(select));
+  if (res.error) throw res.error;
+  const data = res.data;
   return (data as unknown as CommentRow[]).map((c) => ({
     id: c.id,
     postId: c.post_id,
     userId: c.user_id,
     user: c.author?.username ?? "someone",
     avatarColor: c.author?.avatar_color ?? "#4A4A52",
+    avatarUrl: c.author?.avatar_url ?? undefined,
     body: c.body,
     time: timeAgo(c.created_at),
   }));
@@ -214,12 +224,12 @@ export async function setFollow(me: string, other: string, follow: boolean) {
 }
 
 export async function searchPeople(q: string) {
-  const { data } = await sb()
-    .from("profiles")
-    .select("id,username,avatar_color,bio")
-    .ilike("username", `%${q.replace(/[%_]/g, "")}%`)
-    .limit(10);
-  return (data ?? []) as { id: string; username: string; avatar_color: string; bio: string }[];
+  const pattern = `%${q.replace(/[%_]/g, "")}%`;
+  const get = (sel: string) => sb().from("profiles").select(sel).ilike("username", pattern).limit(10);
+  let res: { data: unknown; error: { code?: string } | null } = await get("id,username,avatar_color,avatar_url,bio");
+  if (missingColumn(res.error)) res = await get("id,username,avatar_color,bio");
+  const data = res.data;
+  return (data ?? []) as { id: string; username: string; avatar_color: string; avatar_url: string | null; bio: string }[];
 }
 
 /* ---------- Watchlist ---------- */
@@ -296,19 +306,20 @@ export async function removeFromList(listId: number, key: string) {
 
 /* ---------- Notifications ---------- */
 
-type NotifRow = { id: number; type: NotificationItem["type"]; post_id: number | null; read: boolean; created_at: string; actor: { username: string; avatar_color: string } | null; post: { title: string } | null };
+type NotifRow = { id: number; type: NotificationItem["type"]; post_id: number | null; read: boolean; created_at: string; actor: { username: string; avatar_color: string; avatar_url: string | null } | null; post: { title: string } | null };
 
 export async function fetchNotifications(): Promise<NotificationItem[]> {
-  const { data } = await sb()
-    .from("notifications")
-    .select("id,type,post_id,read,created_at,actor:profiles!notifications_actor_id_fkey(username,avatar_color),post:posts(title)")
-    .order("created_at", { ascending: false })
-    .limit(60);
+  const select = "id,type,post_id,read,created_at,actor:profiles!notifications_actor_id_fkey(username,avatar_color,avatar_url),post:posts(title)";
+  const get = (sel: string) => sb().from("notifications").select(sel).order("created_at", { ascending: false }).limit(60);
+  let res: { data: unknown; error: { code?: string } | null } = await get(select);
+  if (missingColumn(res.error)) res = await get(legacy(select));
+  const data = res.data;
   return ((data ?? []) as unknown as NotifRow[]).map((n) => ({
     id: n.id,
     type: n.type,
     actor: n.actor?.username ?? "someone",
     actorColor: n.actor?.avatar_color ?? "#4A4A52",
+    actorAvatar: n.actor?.avatar_url ?? undefined,
     postId: n.post_id,
     postTitle: n.post?.title,
     read: n.read,

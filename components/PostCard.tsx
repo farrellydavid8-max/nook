@@ -69,7 +69,7 @@ export default function PostCard({ post, onChanged = () => {} }: { post: Post; o
     <article className="post">
       <div className="who">
         <Link href={profileHref(post.user)} aria-label={`${post.user}'s profile`}>
-          <Avatar name={post.user} color={post.avatarColor} />
+          <Avatar name={post.user} color={post.avatarColor} url={post.avatarUrl} />
         </Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <Link href={profileHref(post.user)} className="inline-title">

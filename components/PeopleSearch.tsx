@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store";
 import { SearchIcon } from "./Icons";
 import { Avatar } from "./Media";
 
-type Person = { id: string; username: string; avatar_color: string; bio: string };
+type Person = { id: string; username: string; avatar_color: string; avatar_url: string | null; bio: string };
 
 // Find people by username and follow them right from the results.
 export default function PeopleSearch() {
@@ -54,7 +54,7 @@ export default function PeopleSearch() {
             return (
               <li key={p.id}>
                 <Link href={profileHref(p.username)} className="person">
-                  <Avatar name={p.username} color={p.avatar_color} size={40} />
+                  <Avatar name={p.username} color={p.avatar_color} url={p.avatar_url} size={40} />
                   <span style={{ minWidth: 0 }}>
                     <strong>{p.username}</strong>
                     {p.bio && <span className="sub person-bio">{p.bio}</span>}

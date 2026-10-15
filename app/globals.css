@@ -193,7 +193,7 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 .scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 19; }
 .drawer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--surface-2); border-radius: 20px 20px 0 0; padding: 8px var(--gut-r) max(20px, env(safe-area-inset-bottom, 0px)) var(--gut-l); box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5); z-index: 20; }
 
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; z-index: 30; width: max-content; max-width: min(90vw, 440px); text-align: center; line-height: 1.4; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; z-index: 60; width: max-content; max-width: min(90vw, 440px); text-align: center; line-height: 1.4; }
 
 /* ---------- Social features ---------- */
 .drawer { max-height: 88vh; overflow-y: auto; }
@@ -335,6 +335,22 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 .color-field .color-input input { border: 0; background: transparent; min-height: 36px; padding: 0; }
 .color-input input[type="color"] { width: 40px; height: 36px; border-radius: 8px; cursor: pointer; flex: none; }
 .color-input input:not([type="color"]) { flex: 1; min-width: 0; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; color: var(--fg); text-transform: uppercase; }
+
+/* Profile photos */
+.av { overflow: hidden; }
+.av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.banner { background-size: cover; background-position: center; }
+.upload-row { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.upload-thumb { flex: none; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 22px; color: #fff; }
+.upload-thumb.avatar { width: 56px; height: 56px; border-radius: 50%; }
+.upload-thumb.banner { width: 120px; height: 40px; border-radius: 8px; }
+.upload-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.crop-frame { display: flex; justify-content: center; background: var(--bg); border-radius: 12px; padding: 12px; }
+.crop-frame canvas { max-width: 100%; height: auto; }
+.crop-frame.avatar canvas { border-radius: 50%; width: 240px; }
+.crop-frame.banner canvas { border-radius: 8px; width: 100%; }
+.drawer { z-index: 40; }
+.scrim { z-index: 39; }
 
 /* ---------- Pieces that only show on one screen size ---------- */
 .thead-text { padding-top: 62px; min-width: 0; }

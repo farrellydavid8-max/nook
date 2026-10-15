@@ -26,6 +26,7 @@ type PostBase = {
   userId: string;
   user: string;
   avatarColor: string;
+  avatarUrl?: string;
   title: TitleRef;
   time: string;
   createdAt: string;
@@ -64,6 +65,8 @@ export type Profile = {
   accent: string;
   theme_bg: string | null;
   banner: string;
+  avatar_url: string | null;
+  banner_url: string | null;
   layout: "favorites" | "photos";
   show_stats: boolean;
   letterboxd_url: string | null;
@@ -76,6 +79,7 @@ export type CommentItem = {
   userId: string;
   user: string;
   avatarColor: string;
+  avatarUrl?: string;
   body: string;
   time: string;
 };
@@ -85,6 +89,7 @@ export type NotificationItem = {
   type: "follow" | "like" | "comment";
   actor: string;
   actorColor: string;
+  actorAvatar?: string;
   postId: number | null;
   postTitle?: string;
   read: boolean;

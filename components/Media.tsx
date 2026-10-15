@@ -41,10 +41,16 @@ export function Shot({ src, filter, strength = 100 }: { src: string; filter: Fil
   );
 }
 
-export function Avatar({ name, color, size = 32 }: { name: string; color: string; size?: number }) {
+export function Avatar({ name, color, url, size = 32 }: { name: string; color: string; url?: string | null; size?: number }) {
+  const [broken, setBroken] = useState(false);
   return (
-    <div className="av" style={{ background: color, width: size, height: size }} aria-hidden="true">
-      {name[0]?.toUpperCase()}
+    <div className="av" style={{ background: color, width: size, height: size, fontSize: Math.round(size * 0.4) }} aria-hidden="true">
+      {url && !broken ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt="" loading="lazy" onError={() => setBroken(true)} />
+      ) : (
+        name[0]?.toUpperCase()
+      )}
     </div>
   );
 }

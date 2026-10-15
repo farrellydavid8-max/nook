@@ -42,7 +42,7 @@ function NotificationsList() {
           {items.map((n) => (
             <li key={n.id} className={n.read ? "" : "unread"}>
               <Link href={n.type === "follow" || !n.postId ? profileHref(n.actor) : `/p/${n.postId}`}>
-                <Avatar name={n.actor} color={n.actorColor} size={36} />
+                <Avatar name={n.actor} color={n.actorColor} url={n.actorAvatar} size={36} />
                 <span style={{ minWidth: 0, flex: 1 }}>
                   <strong>{n.actor}</strong> {describe(n)}
                   <span className="sub" style={{ display: "block" }}>

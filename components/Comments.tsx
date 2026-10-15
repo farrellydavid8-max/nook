@@ -62,7 +62,7 @@ export default function Comments({ postId, postOwnerId, onCount }: { postId: num
       ) : (
         visible.map((c) => (
           <div className="comment" key={c.id}>
-            <Avatar name={c.user} color={c.avatarColor} size={26} />
+            <Avatar name={c.user} color={c.avatarColor} url={c.avatarUrl} size={26} />
             <div style={{ minWidth: 0, flex: 1 }}>
               <Link href={profileHref(c.user)} className="inline-title">
                 {c.user}

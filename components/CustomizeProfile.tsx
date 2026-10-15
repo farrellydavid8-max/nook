@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { PosterArt } from "./Media";
 import Modal from "./Modal";
 import AppColors from "./AppColors";
+import ImageUpload from "./ImageUpload";
 import DeleteAccount from "./DeleteAccount";
 import SteamConnect from "./SteamConnect";
 import TitleSearch from "./TitleSearch";
@@ -109,7 +110,15 @@ export default function CustomizeProfile({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="label" style={{ marginTop: 18 }}>
-        Banner
+        Profile picture
+      </div>
+      <ImageUpload kind="avatar" />
+      <div className="label" style={{ marginTop: 18 }}>
+        Banner photo
+      </div>
+      <ImageUpload kind="banner" />
+      <div className="label" style={{ marginTop: 18 }}>
+        Banner color {profile.banner_url ? "(shows behind or instead of a photo)" : ""}
       </div>
       <div className="swatches">
         {BANNERS.map((c) => (

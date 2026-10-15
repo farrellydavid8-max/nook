@@ -46,7 +46,7 @@ export default function InvitePage() {
         <h1 className="wordmark" style={{ fontSize: 40 }}>
           Nook<span className="dot">.</span>
         </h1>
-        <Avatar name={inviter.username} color={inviter.avatar_color} size={84} />
+        <Avatar name={inviter.username} color={inviter.avatar_color} url={inviter.avatar_url} size={84} />
         <p className="invite-line">
           <strong>{inviter.username}</strong> invited you to Nook
         </p>

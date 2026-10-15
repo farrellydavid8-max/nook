@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { CloseIcon } from "./Icons";
 
 // A dialog: a bottom sheet on phones, a centered window on computers.
@@ -15,13 +16,16 @@ export default function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
+  if (!mounted) return null;
+  return createPortal(
     <>
       <div className="scrim" onClick={onClose} />
       <div className={`drawer${wide ? " wide" : ""}`} role="dialog" aria-modal="true" aria-label={title}>
@@ -33,6 +37,7 @@ export default function Modal({
         </div>
         {children}
       </div>
-    </>
+    </>,
+    document.body
   );
 }
