@@ -5,6 +5,8 @@
 //   Anime, Manga → AniList
 //   Books  → Open Library
 //   Comics → Comic Vine (if COMICVINE_API_KEY is set) or Open Library
+//   Albums → Deezer, falling back to MusicBrainz + Cover Art Archive
+//   Concerts → the artist, from Deezer (venue and date are added when logging)
 // Results come back in one shared shape so the rest of the app doesn't care where they came from.
 
 import type { Medium, TitleRef } from "./data";
@@ -161,6 +163,48 @@ async function searchComics(q: string) {
   return searchBooks(`${q} comic`, "Comic");
 }
 
+/* ---------- Music ---------- */
+function deezerAlbumToRef(a: Json): TitleRef {
+  return {
+    key: `deezer-${a.id}`,
+    name: a.title,
+    medium: "Album",
+    year: year(a.release_date),
+    creator: a.artist?.name,
+    poster: a.cover_big ?? a.cover_medium ?? undefined,
+  };
+}
+function mbToRef(g: Json): TitleRef {
+  return {
+    key: `mb-${g.id}`,
+    name: g.title,
+    medium: "Album",
+    year: year(g["first-release-date"]),
+    creator: (g["artist-credit"] as Json[] | undefined)?.map((c) => c.name).join(", "),
+    poster: `https://coverartarchive.org/release-group/${g.id}/front-250`,
+  };
+}
+async function searchAlbums(q: string) {
+  const data = await getJson(`https://api.deezer.com/search/album?q=${encodeURIComponent(q)}&limit=12`);
+  const found = ((data?.data ?? []) as Json[]).map(deezerAlbumToRef);
+  if (found.length) return found;
+  const mb = await getJson(`https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&type=album&limit=12&fmt=json`);
+  return ((mb?.["release-groups"] ?? []) as Json[]).map(mbToRef);
+}
+function artistToRef(a: Json): TitleRef {
+  return {
+    key: `concert-${a.id}`,
+    name: a.name,
+    medium: "Concert",
+    creator: a.nb_fan ? `${Number(a.nb_fan).toLocaleString()} fans` : undefined,
+    poster: a.picture_big ?? a.picture_medium ?? undefined,
+  };
+}
+async function searchArtists(q: string) {
+  const data = await getJson(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=12`);
+  return ((data?.data ?? []) as Json[]).map(artistToRef);
+}
+
 export async function searchCatalog(q: string, medium: Medium): Promise<TitleRef[]> {
   const results = await (async () => {
     switch (medium) {
@@ -177,6 +221,10 @@ export async function searchCatalog(q: string, medium: Medium): Promise<TitleRef
         return searchBooks(q);
       case "Comic":
         return searchComics(q);
+      case "Album":
+        return searchAlbums(q);
+      case "Concert":
+        return searchArtists(q);
     }
   })();
   return results.filter((r) => r.name);
@@ -234,6 +282,18 @@ export async function getTitle(key: string): Promise<TitleRef | null> {
       if (!COMICVINE) return null;
       const data = await getJson(`https://comicvine.gamespot.com/api/volume/4050-${encodeURIComponent(id)}/?api_key=${COMICVINE}&format=json`);
       return data?.results ? comicvineToRef(data.results) : null;
+    }
+    case "deezer": {
+      const a = await getJson(`https://api.deezer.com/album/${encodeURIComponent(id)}`);
+      return a?.id ? deezerAlbumToRef(a) : null;
+    }
+    case "mb": {
+      const g = await getJson(`https://musicbrainz.org/ws/2/release-group/${encodeURIComponent(id)}?inc=artist-credits&fmt=json`);
+      return g?.id ? mbToRef(g) : null;
+    }
+    case "concert": {
+      const a = await getJson(`https://api.deezer.com/artist/${encodeURIComponent(id)}`);
+      return a?.id ? { ...artistToRef(a), creator: "Live" } : null;
     }
     default:
       return null; // manual entries live only in Nook's own posts

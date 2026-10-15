@@ -75,7 +75,7 @@ export default function TitleSearch({
         <input
           type="search"
           autoFocus={autoFocus}
-          placeholder={`Search ${MEDIA[medium].toLowerCase()} by name`}
+          placeholder={medium === "Concert" ? "Search for the artist or band" : medium === "Album" ? "Search albums or artists" : `Search ${MEDIA[medium].toLowerCase()} by name`}
           value={q}
           onChange={(e) => {
             setQ(e.target.value);

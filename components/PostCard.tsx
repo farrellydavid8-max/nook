@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import * as api from "@/lib/api";
-import { REWATCH_LABEL, profileHref, stars, titleHref, type Post } from "@/lib/data";
+import { REWATCH_LABEL, loggedPhrase, profileHref, stars, titleHref, type Post } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import Comments from "./Comments";
 import { HeartIcon, LinkIcon } from "./Icons";
@@ -62,8 +62,8 @@ export default function PostCard({ post, onChanged = () => {} }: { post: Post; o
         : post.status === "Dropped"
           ? "dropped"
           : post.rewatch
-            ? { Rewatch: "rewatched", Replay: "replayed", Reread: "reread" }[REWATCH_LABEL[t.medium]]
-            : `logged ${t.medium === "Anime" ? "an anime" : t.medium === "Manga" ? "manga" : "a " + t.medium.toLowerCase()}`;
+            ? ({ Rewatch: "rewatched", Replay: "replayed", Reread: "reread", Relisten: "relistened to", "Seen live before": "saw again live" } as Record<string, string>)[REWATCH_LABEL[t.medium]]
+            : loggedPhrase(t.medium);
 
   return (
     <article className="post">

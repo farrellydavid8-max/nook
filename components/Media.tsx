@@ -4,14 +4,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { FILTERS, colorFor, titleHref, type FilterName, type TitleRef } from "@/lib/data";
+import { FILTERS, colorFor, squareArt, titleHref, type FilterName, type TitleRef } from "@/lib/data";
 
 // Cover art when the catalog has it; otherwise a colored block with the name.
 export function PosterArt({ title, label = true, className = "poster" }: { title: TitleRef; label?: boolean; className?: string }) {
   const [broken, setBroken] = useState(false);
   const showImage = title.poster && !broken;
   return (
-    <span className={className} style={{ background: colorFor(title.name) }}>
+    <span className={`${className}${squareArt(title.medium) ? " square" : ""}`} style={{ background: colorFor(title.name) }}>
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={title.poster} alt="" loading="lazy" onError={() => setBroken(true)} />

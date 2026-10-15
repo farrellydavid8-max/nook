@@ -1,6 +1,6 @@
 // Shared types and small helpers.
 
-export type Medium = "Film" | "TV" | "Game" | "Anime" | "Book" | "Manga" | "Comic";
+export type Medium = "Film" | "TV" | "Game" | "Anime" | "Book" | "Manga" | "Comic" | "Album" | "Concert";
 
 // A title from any catalog (or added by hand). `key` is "<source>-<id>", e.g. "tvmaze-169".
 export type TitleRef = {
@@ -114,6 +114,8 @@ export const MEDIA: Record<Medium, string> = {
   Book: "Books",
   Manga: "Manga",
   Comic: "Comics",
+  Album: "Albums",
+  Concert: "Concerts",
 };
 export const MEDIUMS = Object.keys(MEDIA) as Medium[];
 
@@ -125,6 +127,8 @@ export const PROGRESS: Record<Medium, { label: string; hint: string }> = {
   Book: { label: "Pages", hint: "e.g. 180 / 320" },
   Manga: { label: "Chapter", hint: "e.g. Ch. 45" },
   Comic: { label: "Issue", hint: "e.g. Issue 12" },
+  Album: { label: "Listens", hint: "e.g. First listen" },
+  Concert: { label: "Venue", hint: "e.g. Massey Hall, Toronto" },
 };
 
 export const slugify = (s: string) =>
@@ -168,7 +172,16 @@ export const REWATCH_LABEL: Record<Medium, string> = {
   Book: "Reread",
   Manga: "Reread",
   Comic: "Reread",
+  Album: "Relisten",
+  Concert: "Seen live before",
 };
+
+// "logged a film", "logged an album", "went to a concert"
+export const loggedPhrase = (m: Medium) =>
+  m === "Concert" ? "went to a concert" : m === "Anime" || m === "Album" ? `logged an ${m.toLowerCase()}` : m === "Manga" ? "logged manga" : `logged a ${m.toLowerCase()}`;
+
+// Square art for music; tall posters for everything else
+export const squareArt = (m: Medium) => m === "Album" || m === "Concert";
 
 export const profileHref = (username: string) => `/u/${encodeURIComponent(username)}`;
 export const USERNAME = /^[a-z0-9_]{3,20}$/;
