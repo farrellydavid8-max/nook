@@ -105,7 +105,7 @@ export default function LetterboxdConnect() {
       {link && !link.verified && (
         <div className="lb-steps">
           <p className="sub" style={{ margin: 0, lineHeight: 1.5 }}>
-            To prove <b>{link.lb_username}</b> is yours, make a new list on Letterboxd with this code as its name. Add any one film and save it, then tap Verify. You can delete the list afterwards.
+            To prove <b>{link.lb_username}</b> is yours, put this code somewhere on your Letterboxd that shows in your public activity: either as the name of a new list (with any one film), or as the review text when you log any film. Then tap Verify. You can delete it afterwards.
           </p>
           <div className="code-chip">
             <code>{link.code}</code>

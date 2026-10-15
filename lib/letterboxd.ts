@@ -123,7 +123,7 @@ export async function syncLetterboxd(userId: string): Promise<LbSyncResult> {
   const seenUrls = new Set((existing ?? []).map((p) => p.letterboxd_url).filter(Boolean));
   const seenDay = new Set((existing ?? []).map((p) => `${p.title_key}|${p.logged_on}`));
   const fresh = entries.filter(
-    (e) => !seenIds.has(e.guid) && !seenUrls.has(e.link) && !(e.tmdbId && seenDay.has(`tmdb-${e.tmdbId}|${e.watched}`))
+    (e) => !e.review.toLowerCase().includes(String(link.code).toLowerCase()) && !seenIds.has(e.guid) && !seenUrls.has(e.link) && !(e.tmdbId && seenDay.has(`tmdb-${e.tmdbId}|${e.watched}`))
   );
 
   // Use TMDB's poster and director when we can; otherwise Letterboxd's poster
