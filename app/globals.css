@@ -366,6 +366,14 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 .thumb-wrap { position: relative; }
 .thumb-wrap .thumb { border: 0; }
 
+/* Letterboxd connect */
+.lb-dots { display: flex; gap: 2px; flex: none; }
+.lb-dots i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+.inline-input { flex: 1; min-width: 160px; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.lb-steps { display: flex; flex-direction: column; gap: 10px; }
+.code-chip { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 10px; background: var(--bg); border: 1px dashed var(--accent); width: fit-content; }
+.code-chip code { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; }
+
 /* ---------- Pieces that only show on one screen size ---------- */
 .thead-text { padding-top: 62px; min-width: 0; }
 .tab-label, .side-brand, .side-foot, .desktop-only, .rail { display: none; }

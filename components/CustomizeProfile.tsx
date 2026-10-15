@@ -9,6 +9,7 @@ import { PosterArt } from "./Media";
 import Modal from "./Modal";
 import AppColors from "./AppColors";
 import ImageUpload from "./ImageUpload";
+import LetterboxdConnect from "./LetterboxdConnect";
 import DeleteAccount from "./DeleteAccount";
 import SteamConnect from "./SteamConnect";
 import TitleSearch from "./TitleSearch";
@@ -152,6 +153,7 @@ export default function CustomizeProfile({ onClose }: { onClose: () => void }) {
         Connected accounts
       </div>
       <SteamConnect />
+      <LetterboxdConnect />
 
       {error && (
         <p className="err" role="alert" style={{ fontSize: 14 }}>

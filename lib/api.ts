@@ -397,3 +397,12 @@ export async function fetchSteamLink(): Promise<SteamLink | null> {
   const { data } = await sb().from("steam_links").select("steam_name,avatar_url,is_public,last_synced_at,sync_error").maybeSingle();
   return (data as SteamLink) ?? null;
 }
+
+/* ---------- Letterboxd sync ---------- */
+
+export type LetterboxdLink = { lb_username: string; code: string; verified: boolean; last_synced_at: string | null; sync_error: string | null };
+
+export async function fetchLetterboxdLink(): Promise<LetterboxdLink | null> {
+  const { data } = await sb().from("letterboxd_links").select("lb_username,code,verified,last_synced_at,sync_error").maybeSingle();
+  return (data as LetterboxdLink) ?? null;
+}
