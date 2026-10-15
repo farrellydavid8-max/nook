@@ -14,7 +14,7 @@ import NewListButton from "./NewListButton";
 import PostCard from "./PostCard";
 import { inviteUrl } from "@/lib/invite";
 
-type Tab = "Diary" | "Games" | "Reviews" | "Photos" | "Lists" | "Want to";
+type Tab = "Diary" | "Games" | "Reviews" | "Updates" | "Lists" | "Want to";
 
 export default function ProfileView({ username }: { username: string }) {
   const { user, profile: me, following, blocked, toggleFollow, toggleBlock, signOut, version, toast } = useStore();
@@ -114,7 +114,7 @@ export default function ProfileView({ username }: { username: string }) {
     </div>
   );
 
-  const tabs: Tab[] = library.length ? ["Diary", "Games", "Reviews", "Photos", "Lists", "Want to"] : ["Diary", "Reviews", "Photos", "Lists", "Want to"];
+  const tabs: Tab[] = library.length ? ["Diary", "Games", "Reviews", "Updates", "Lists", "Want to"] : ["Diary", "Reviews", "Updates", "Lists", "Want to"];
   const playingNow = library.filter((g) => recentlyPlayed(g)).slice(0, 6);
   const totalMinutes = library.reduce((a, g) => a + g.minutes, 0);
   const tabBlock = (
@@ -205,13 +205,32 @@ export default function ProfileView({ username }: { username: string }) {
           <div className="empty">No written reviews yet.</div>
         ))}
 
-      {loaded && tab === "Photos" &&
+      {loaded && tab === "Updates" &&
         (photoPosts.length ? (
-          <div className="pgrid">
-            {photoPosts.flatMap((p) => p.shots.map((s, i) => <Shot key={`${p.id}-${i}`} src={s} filter={p.filter} strength={p.strength} />))}
-          </div>
+          <>
+            {photoPosts.some((p) => p.shots.length) && (
+              <div className="pgrid">
+                {photoPosts.flatMap((p) =>
+                  p.shots.map((s, i) => (
+                    <Link key={`${p.id}-${i}`} href={`/p/${p.id}`} aria-label={`Update about ${p.title.name}`}>
+                      <Shot src={s} filter={p.filter} strength={p.strength} />
+                    </Link>
+                  ))
+                )}
+              </div>
+            )}
+            {photoPosts.some((p) => !p.shots.length) && (
+              <div className="feed" style={{ paddingTop: 16 }}>
+                {photoPosts
+                  .filter((p) => !p.shots.length)
+                  .map((p) => (
+                    <PostCard key={p.id} post={p} />
+                  ))}
+              </div>
+            )}
+          </>
         ) : (
-          <div className="empty">{isMe ? <Link href="/post">Post your first photos.</Link> : "No photos yet."}</div>
+          <div className="empty">{isMe ? <Link href="/post">Share your first update.</Link> : "No updates yet."}</div>
         ))}
 
       {tab === "Lists" && (

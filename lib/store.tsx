@@ -172,14 +172,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addPhotoPost = useCallback(
     async (p: NewPhotoPost) => {
       if (!user) return "Log in to post photos.";
-      if (!p.files.length) return "Add at least one photo first.";
+      if (!p.files.length && !p.caption) return "Add a photo, a clip or a few words.";
       const sb = getSupabase();
       const urls: string[] = [];
       for (const file of p.files) {
         const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
         const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
         const { error } = await sb.storage.from("photos").upload(path, file, { contentType: file.type, upsert: false });
-        if (error) return `Couldn't upload ${file.name}. Photos must be images under 10 MB.`;
+        if (error) return `Couldn't upload ${file.name}. Photos can be up to 10 MB and clips up to 50 MB (MP4, MOV or WebM).`;
         urls.push(sb.storage.from("photos").getPublicUrl(path).data.publicUrl);
       }
       const { error } = await sb.from("posts").insert({
@@ -191,7 +191,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         filter_strength: p.strength,
         caption: p.caption || null,
       });
-      if (error) return "Your photos uploaded but the post didn't save. Try posting again.";
+      if (error) return "Your files uploaded but the update didn't save. Try posting again.";
       bump();
       return null;
     },

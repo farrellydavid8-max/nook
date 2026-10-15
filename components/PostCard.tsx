@@ -56,7 +56,7 @@ export default function PostCard({ post, onChanged = () => {} }: { post: Post; o
 
   const action =
     post.type === "photo"
-      ? `posted ${post.shots.length} ${post.shots.length === 1 ? "shot" : "shots"}`
+      ? "shared an update"
       : post.status === "In progress"
         ? "is partway through"
         : post.status === "Dropped"
@@ -84,12 +84,14 @@ export default function PostCard({ post, onChanged = () => {} }: { post: Post; o
 
       {post.type === "photo" ? (
         <>
-          <div className="grid3" style={{ gridTemplateColumns: `repeat(${Math.min(post.shots.length, 3)}, minmax(0, 1fr))` }}>
-            {post.shots.map((s, i) => (
-              <Shot key={i} src={s} filter={post.filter} strength={post.strength} />
-            ))}
-          </div>
-          {post.caption && <p className="review">{post.caption}</p>}
+          {post.caption && <p className="review update-text">{post.caption}</p>}
+          {post.shots.length > 0 && (
+            <div className={`grid3${post.shots.length === 1 ? " single" : ""}`} style={{ gridTemplateColumns: `repeat(${Math.min(post.shots.length, 3)}, minmax(0, 1fr))` }}>
+              {post.shots.map((s, i) => (
+                <Shot key={i} src={s} filter={post.filter} strength={post.strength} controls />
+              ))}
+            </div>
+          )}
           <div className="postfoot">
             <span>
               from{" "}

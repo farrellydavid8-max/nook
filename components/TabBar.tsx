@@ -9,7 +9,7 @@ const TABS = [
   { href: "/", label: "Feed", Icon: HomeIcon },
   { href: "/explore", label: "Explore", Icon: CompassIcon, match: "/explore" },
   { href: "/log", label: "Log something", Icon: PlusIcon, plus: true },
-  { href: "/post", label: "Post photos", Icon: PhotoIcon },
+  { href: "/post", label: "Post an update", Icon: PhotoIcon },
   { href: "/profile", label: "Profile", Icon: UserIcon, match: "/u/" },
 ];
 

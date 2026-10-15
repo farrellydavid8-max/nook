@@ -105,7 +105,7 @@ export default function TitlePage() {
             {wanted ? "✓ Want to" : "Want to"}
           </button>
           <Link href={`/post?title=${keyParam}`} className="btn">
-            Post photos
+            Post update
           </Link>
           {user && (
             <button className="btn" onClick={() => setAdding(true)}>

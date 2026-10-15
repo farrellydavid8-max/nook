@@ -30,8 +30,18 @@ export function Poster({ title, width, label = true }: { title: TitleRef; width?
   );
 }
 
-// A photo with its filter. The filtered copy sits on top at the chosen strength.
-export function Shot({ src, filter, strength = 100 }: { src: string; filter: FilterName; strength?: number }) {
+export const isVideo = (url: string) => /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url);
+
+// A photo with its filter (the filtered copy sits on top at the chosen strength), or a clip.
+export function Shot({ src, filter, strength = 100, controls = false }: { src: string; filter: FilterName; strength?: number; controls?: boolean }) {
+  if (isVideo(src)) {
+    return (
+      <div className="shot">
+        <video className="layer-video" src={src} controls={controls} muted playsInline preload="metadata" loop={!controls} />
+        {!controls && <span className="play-badge" aria-label="Video">▶</span>}
+      </div>
+    );
+  }
   const image = { backgroundImage: `url("${src}")` };
   return (
     <div className="shot">
