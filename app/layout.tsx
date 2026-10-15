@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Serif_Display, Instrument_Sans } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import TabBar from "@/components/TabBar";
+import { EARLY_THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 const display = DM_Serif_Display({ weight: "400", subsets: ["latin"], variable: "--font-display" });
@@ -19,8 +20,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable}`}>
       <body>
+        <script dangerouslySetInnerHTML={{ __html: EARLY_THEME_SCRIPT }} />
         <StoreProvider>
           <div className="app">
             <main className="screen-wrap">{children}</main>

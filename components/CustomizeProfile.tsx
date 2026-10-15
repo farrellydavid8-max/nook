@@ -7,12 +7,12 @@ import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { PosterArt } from "./Media";
 import Modal from "./Modal";
+import AppColors from "./AppColors";
 import DeleteAccount from "./DeleteAccount";
 import SteamConnect from "./SteamConnect";
 import TitleSearch from "./TitleSearch";
 
 const BANNERS = ["#3B3226", "#2E4A52", "#4A2E3E", "#2F3A2A", "#1F2433", "#4A3A22"];
-const ACCENTS = ["#E8A33D", "#7FB3D5", "#E08DAE", "#9CC58A", "#C9A7EB", "#F0876B"];
 
 export default function CustomizeProfile({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -117,13 +117,12 @@ export default function CustomizeProfile({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <div className="label" style={{ marginTop: 16 }}>
-        Accent
+        App colors
       </div>
-      <div className="swatches">
-        {ACCENTS.map((c) => (
-          <button key={c} className="sw" style={{ background: c }} aria-label={`Accent ${c}`} aria-pressed={profile.accent === c} onClick={() => set({ accent: c })} />
-        ))}
-      </div>
+      <p className="sub" style={{ margin: "4px 0 0" }}>
+        Changes how Nook looks for you. Everyone else sees Nook in their own colors.
+      </p>
+      <AppColors />
       <div className="label" style={{ marginTop: 16 }}>
         Layout
       </div>

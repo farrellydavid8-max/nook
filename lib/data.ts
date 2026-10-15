@@ -62,6 +62,7 @@ export type Profile = {
   bio: string;
   avatar_color: string;
   accent: string;
+  theme_bg: string | null;
   banner: string;
   layout: "favorites" | "photos";
   show_stats: boolean;

@@ -25,7 +25,7 @@ export default function DeleteAccount() {
 
   if (!open) {
     return (
-      <button className="linkbtn small" style={{ color: "#f4a497", marginTop: 18 }} onClick={() => setOpen(true)}>
+      <button className="linkbtn small" style={{ color: "var(--danger)", marginTop: 18 }} onClick={() => setOpen(true)}>
         Delete my account
       </button>
     );

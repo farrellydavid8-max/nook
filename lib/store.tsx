@@ -8,6 +8,7 @@ import type { User } from "@supabase/supabase-js";
 import * as api from "./api";
 import type { FilterName, Profile, TitleRef } from "./data";
 import { clearInvite, readInvite } from "./invite";
+import { DEFAULT_ACCENT, DEFAULT_BG, applyTheme } from "./theme";
 import { getSupabase, isConfigured } from "./supabase";
 
 export type NewLog = {
@@ -136,12 +137,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => window.clearInterval(t);
   }, [user, refreshUnread]);
 
-  // Apply the signed-in person's colors to the whole app
+  // Apply the signed-in person's app colors (and the defaults once they sign out)
   useEffect(() => {
-    const root = document.documentElement.style;
-    root.setProperty("--accent", profile?.accent ?? "#E8A33D");
-    root.setProperty("--banner", profile?.banner ?? "#3B3226");
-  }, [profile?.accent, profile?.banner]);
+    if (loading) return;
+    applyTheme(profile?.theme_bg ?? DEFAULT_BG, profile?.accent ?? DEFAULT_ACCENT);
+    document.documentElement.style.setProperty("--banner", profile?.banner ?? "#3B3226");
+  }, [loading, profile?.theme_bg, profile?.accent, profile?.banner]);
 
   const addLog = useCallback(
     async (l: NewLog, editId?: number) => {
