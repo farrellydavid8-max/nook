@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import RequireAuth from "@/components/RequireAuth";
+import LogMedia, { type NewMedia } from "@/components/LogMedia";
 import TitlePicker from "@/components/TitlePicker";
 import * as api from "@/lib/api";
 import { LETTERBOXD, PROGRESS, REWATCH_LABEL, normalizeUrl, type TitleRef } from "@/lib/data";
@@ -27,6 +28,9 @@ function LogForm() {
   const [lbError, setLbError] = useState(false);
   const [spoiler, setSpoiler] = useState(false);
   const [rewatch, setRewatch] = useState(false);
+  const [keepShots, setKeepShots] = useState<string[]>([]);
+  const [removedShots, setRemovedShots] = useState<string[]>([]);
+  const [media, setMedia] = useState<NewMedia[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingEdit, setLoadingEdit] = useState(Boolean(editId));
@@ -47,6 +51,7 @@ function LogForm() {
         setLb(p.letterboxd ?? "");
         setSpoiler(Boolean(p.spoiler));
         setRewatch(Boolean(p.rewatch));
+        setKeepShots(p.shots);
       })
       .catch(() => setError("Couldn't load that log."))
       .finally(() => setLoadingEdit(false));
@@ -72,6 +77,9 @@ function LogForm() {
       letterboxd: link ? normalizeUrl(link) : undefined,
       spoiler,
       rewatch,
+      keepShots,
+      removedShots,
+      files: media.map((m) => m.file),
     }, editId);
     setSaving(false);
     if (problem) return setError(problem);
@@ -88,7 +96,7 @@ function LogForm() {
         </Link>
         <h1>{editId ? "Edit log" : "New log"}</h1>
         <button type="submit" className="pill" disabled={saving || !title}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? (media.length ? "Uploading…" : "Saving…") : "Save"}
         </button>
       </header>
 
@@ -149,6 +157,16 @@ function LogForm() {
         Review
         <textarea id="log-review" rows={4} maxLength={4000} placeholder="What stuck with you?" value={text} onChange={(e) => setText(e.target.value)} />
       </label>
+
+      <LogMedia
+        existing={keepShots}
+        onRemoveExisting={(u) => {
+          setKeepShots(keepShots.filter((x) => x !== u));
+          setRemovedShots([...removedShots, u]);
+        }}
+        added={media}
+        setAdded={setMedia}
+      />
 
       <label className="field" htmlFor="log-lb">
         Link a Letterboxd review (optional)

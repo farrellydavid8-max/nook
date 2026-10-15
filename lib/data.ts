@@ -45,6 +45,7 @@ export type LogPost = PostBase & {
   progress?: string;
   loggedOn?: string;
   rewatch?: boolean;
+  shots: string[]; // photos and clips attached to the log
 };
 
 export type PhotoPost = PostBase & {

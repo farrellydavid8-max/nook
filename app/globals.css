@@ -363,6 +363,9 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 .small-drop { height: 150px; }
 .pgrid a { display: block; }
 
+.thumb-wrap { position: relative; }
+.thumb-wrap .thumb { border: 0; }
+
 /* ---------- Pieces that only show on one screen size ---------- */
 .thead-text { padding-top: 62px; min-width: 0; }
 .tab-label, .side-brand, .side-foot, .desktop-only, .rail { display: none; }

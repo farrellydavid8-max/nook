@@ -131,6 +131,16 @@ export default function PostCard({ post, onChanged = () => {} }: { post: Post; o
                 ))}
             </div>
           </div>
+          {post.shots.length > 0 && (
+            <div
+              className={`grid3${post.shots.length === 1 ? " single" : ""}`}
+              style={{ marginTop: 12, gridTemplateColumns: `repeat(${Math.min(post.shots.length, 3)}, minmax(0, 1fr))` }}
+            >
+              {post.shots.map((s, i) => (
+                <Shot key={i} src={s} filter="Raw" controls />
+              ))}
+            </div>
+          )}
           {post.letterboxd && (
             <a className="lb" href={post.letterboxd} target="_blank" rel="noopener noreferrer">
               <LinkIcon size={16} />

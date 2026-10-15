@@ -114,6 +114,7 @@ function toPost(r: PostRow, me?: string): Post {
     progress: r.progress ?? undefined,
     loggedOn: r.logged_on ?? undefined,
     rewatch: r.rewatch ?? false,
+    shots: r.photos ?? [],
   };
 }
 
@@ -146,8 +147,8 @@ export async function setLike(postId: number, me: string, like: boolean) {
 export async function deletePost(post: Post) {
   const { error } = await sb().from("posts").delete().eq("id", post.id);
   if (error) throw error;
-  if (post.type === "photo") {
-    // Remove the uploaded image files too
+  {
+    // Remove the uploaded photos and clips too
     const paths = post.shots.map((u) => u.split("/object/public/photos/")[1]).filter(Boolean);
     if (paths.length) await sb().storage.from("photos").remove(paths);
   }

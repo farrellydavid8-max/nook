@@ -63,6 +63,7 @@ export default function ProfileView({ username }: { username: string }) {
   const logs = posts.filter((p): p is LogPost => p.type === "log");
   const reviews = logs.filter((p) => p.text);
   const photoPosts = posts.filter((p): p is PhotoPost => p.type === "photo");
+  const withMedia = posts.filter((p) => p.shots.length > 0);
   const mediumCounts = Object.entries(MEDIA)
     .map(([m, label]) => [label, logs.filter((p) => p.title.medium === m && p.status !== "In progress").length] as const)
     .filter(([, n]) => n > 0);
@@ -206,14 +207,14 @@ export default function ProfileView({ username }: { username: string }) {
         ))}
 
       {loaded && tab === "Updates" &&
-        (photoPosts.length ? (
+        (photoPosts.length || withMedia.length ? (
           <>
-            {photoPosts.some((p) => p.shots.length) && (
+            {withMedia.length > 0 && (
               <div className="pgrid">
-                {photoPosts.flatMap((p) =>
+                {withMedia.flatMap((p) =>
                   p.shots.map((s, i) => (
-                    <Link key={`${p.id}-${i}`} href={`/p/${p.id}`} aria-label={`Update about ${p.title.name}`}>
-                      <Shot src={s} filter={p.filter} strength={p.strength} />
+                    <Link key={`${p.id}-${i}`} href={`/p/${p.id}`} aria-label={`Photo from ${p.title.name}`}>
+                      <Shot src={s} filter={p.type === "photo" ? p.filter : "Raw"} strength={p.type === "photo" ? p.strength : 100} />
                     </Link>
                   ))
                 )}

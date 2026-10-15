@@ -21,6 +21,12 @@ export type NewLog = {
   letterboxd?: string;
   spoiler: boolean;
   rewatch: boolean;
+  /** Photos already on the log (when editing) that should stay */
+  keepShots?: string[];
+  /** Photos that were on the log but were removed while editing */
+  removedShots?: string[];
+  /** New photos or clips to upload */
+  files?: File[];
 };
 
 export type NewPhotoPost = {
@@ -144,9 +150,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.style.setProperty("--banner", profile?.banner ?? "#3B3226");
   }, [loading, profile?.theme_bg, profile?.accent, profile?.banner]);
 
+  // Upload photos and clips into your own folder; returns their public addresses, or an error message
+  const uploadMedia = useCallback(
+    async (files: File[]): Promise<string[] | string> => {
+      if (!user) return "Log in first.";
+      const bucket = getSupabase().storage.from("photos");
+      const urls: string[] = [];
+      for (const file of files) {
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const { error } = await bucket.upload(path, file, { contentType: file.type, upsert: false });
+        if (error) return `Couldn't upload ${file.name}. Photos can be up to 10 MB and clips up to 50 MB (MP4, MOV or WebM).`;
+        urls.push(bucket.getPublicUrl(path).data.publicUrl);
+      }
+      return urls;
+    },
+    [user]
+  );
+
   const addLog = useCallback(
     async (l: NewLog, editId?: number) => {
       if (!user) return "Log in to save your log.";
+      const uploaded = await uploadMedia(l.files ?? []);
+      if (typeof uploaded === "string") return uploaded;
       const row = {
         type: "log",
         ...titleColumns(l.title),
@@ -158,31 +184,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         letterboxd_url: l.letterboxd || null,
         spoiler: l.spoiler,
         rewatch: l.rewatch,
+        photos: [...(l.keepShots ?? []), ...uploaded],
       };
       const { error } = editId
         ? await getSupabase().from("posts").update(row).eq("id", editId)
         : await getSupabase().from("posts").insert({ user_id: user.id, ...row });
       if (error) return "Couldn't save your log. Check your connection and try again.";
+      // Clean up photos removed while editing
+      const gone = (l.removedShots ?? []).map((u) => u.split("/object/public/photos/")[1]).filter(Boolean);
+      if (gone.length) await getSupabase().storage.from("photos").remove(gone);
       bump();
       return null;
     },
-    [user, bump]
+    [user, bump, uploadMedia]
   );
 
   const addPhotoPost = useCallback(
     async (p: NewPhotoPost) => {
       if (!user) return "Log in to post photos.";
       if (!p.files.length && !p.caption) return "Add a photo, a clip or a few words.";
-      const sb = getSupabase();
-      const urls: string[] = [];
-      for (const file of p.files) {
-        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-        const { error } = await sb.storage.from("photos").upload(path, file, { contentType: file.type, upsert: false });
-        if (error) return `Couldn't upload ${file.name}. Photos can be up to 10 MB and clips up to 50 MB (MP4, MOV or WebM).`;
-        urls.push(sb.storage.from("photos").getPublicUrl(path).data.publicUrl);
-      }
-      const { error } = await sb.from("posts").insert({
+      const urls = await uploadMedia(p.files);
+      if (typeof urls === "string") return urls;
+      const { error } = await getSupabase().from("posts").insert({
         user_id: user.id,
         type: "photo",
         ...titleColumns(p.title),
@@ -195,7 +218,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       bump();
       return null;
     },
-    [user, bump]
+    [user, bump, uploadMedia]
   );
 
   const toggleFollow = useCallback(

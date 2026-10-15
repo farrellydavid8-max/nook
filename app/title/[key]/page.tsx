@@ -8,7 +8,7 @@ import AddToList from "@/components/AddToList";
 import { PosterArt, Shot } from "@/components/Media";
 import PostCard from "@/components/PostCard";
 import * as api from "@/lib/api";
-import { colorFor, describe, hours, type LibraryGame, type ListItem, type LogPost, type PhotoPost, type TitleRef } from "@/lib/data";
+import { colorFor, describe, hours, type LibraryGame, type ListItem, type LogPost, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { usePosts } from "@/lib/usePosts";
 
@@ -63,7 +63,7 @@ export default function TitlePage() {
 
   const logs = here.filter((p): p is LogPost => p.type === "log");
   const rated = logs.filter((p) => p.rating > 0);
-  const photos = here.filter((p): p is PhotoPost => p.type === "photo");
+  const photos = here.filter((p) => p.shots.length > 0);
   const avg = rated.length ? (rated.reduce((a, p) => a + p.rating, 0) / rated.length).toFixed(1) : "–";
   const counts = Array(10).fill(0);
   rated.forEach((p) => counts[Math.round(p.rating * 2) - 1]++);
@@ -151,7 +151,7 @@ export default function TitlePage() {
         {tab === "photos" &&
           (photos.length ? (
             <div className="grid3 wall" style={{ marginTop: 16 }}>
-              {photos.flatMap((p) => p.shots.map((s, i) => <Shot key={`${p.id}-${i}`} src={s} filter={p.filter} strength={p.strength} />))}
+              {photos.flatMap((p) => p.shots.map((s, i) => <Shot key={`${p.id}-${i}`} src={s} filter={p.type === "photo" ? p.filter : "Raw"} strength={p.type === "photo" ? p.strength : 100} />))}
             </div>
           ) : (
             <div className="empty">No photos yet. Post a screenshot or a shot of your copy.</div>
