@@ -20,7 +20,8 @@ function GoToMyProfile() {
       failed: "Steam sign-in didn't go through. Try connecting again.",
       dberror: "Steam signed you in, but Nook couldn't save the connection. The database update or secret key still needs setting up.",
     };
-    if (steam && messages[steam]) toast(messages[steam]);
+    const code = new URLSearchParams(window.location.search).get("code");
+    if (steam && messages[steam]) toast(messages[steam] + (code ? ` (code ${code})` : ""));
     router.replace(`/u/${profile.username}`);
   }, [profile, router, toast]);
   return <div className="empty">{profile ? "Opening your profile…" : "Setting up your profile… If this doesn't go away, log out and back in."}</div>;

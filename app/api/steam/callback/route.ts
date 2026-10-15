@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   const { error } = await db.from("steam_links").upsert({ user_id: user.id, steam_id: steamId, linked_at: new Date().toISOString() });
   if (error) {
     console.error("steam link save failed", error.message);
-    return back("dberror");
+    return NextResponse.redirect(`${url.origin}/profile?steam=dberror&code=${encodeURIComponent(error.code ?? "")}`);
   }
 
   const result = await syncSteam(user.id);

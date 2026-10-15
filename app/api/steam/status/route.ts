@@ -27,6 +27,10 @@ export async function GET() {
     status.steamLinksTable = links.error ? `error: ${links.error.message}` : "ok";
     const lib = await db.from("game_library").select("user_id", { count: "exact", head: true });
     status.gameLibraryTable = lib.error ? `error: ${lib.error.message}` : "ok";
+    // A write that is meant to fail on the made-up account: proves whether writing is allowed at all
+    const probe = await db.from("steam_links").upsert({ user_id: "00000000-0000-0000-0000-000000000000", steam_id: "0" });
+    status.writeTest = probe.error ? `${probe.error.code}: ${probe.error.message}` : "wrote (unexpected)";
+    if (!probe.error) await db.from("steam_links").delete().eq("user_id", "00000000-0000-0000-0000-000000000000");
   } catch (e) {
     status.database = e instanceof Error ? e.message : "error";
   }
