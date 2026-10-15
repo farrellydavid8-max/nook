@@ -8,7 +8,11 @@ export async function GET(req: Request) {
   // Also accept a Letterboxd username
   const { data: link } = await db.from("letterboxd_links").select("user_id").ilike("lb_username", u).maybeSingle();
   const { data: p } = link ? { data: { id: link.user_id as string } } : await db.from("profiles").select("id").eq("username", u).maybeSingle();
-  if (!p) return NextResponse.json({ found: false });
+  if (!p) {
+    const links = await db.from("letterboxd_links").select("lb_username,verified,last_synced_at,sync_error");
+    const profiles = await db.from("profiles").select("*", { count: "exact", head: true });
+    return NextResponse.json({ found: false, links: links.data, linksError: links.error?.message ?? null, profileCount: profiles.count });
+  }
   const all = await db.from("posts").select("id,type,title,external_id,created_at,logged_on").eq("user_id", p.id).order("created_at", { ascending: false }).limit(5);
   const count = await db.from("posts").select("*", { count: "exact", head: true }).eq("user_id", p.id);
   const lb = await db.from("posts").select("*", { count: "exact", head: true }).eq("user_id", p.id).not("external_id", "is", null);
