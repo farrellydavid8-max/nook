@@ -5,7 +5,7 @@ import { useState } from "react";
 import RequireAuth from "@/components/RequireAuth";
 import { LinkIcon, PaletteIcon } from "@/components/Icons";
 import { Avatar, Poster, Shot } from "@/components/Media";
-import { LETTERBOXD, MEDIA, findTitle, normalizeUrl, stars, type LogPost, type PhotoPost } from "@/lib/data";
+import { LETTERBOXD, MEDIA, normalizeUrl, stars, type LogPost, type PhotoPost, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 const BANNERS = ["#3B3226", "#2E4A52", "#4A2E3E", "#2F3A2A", "#1F2433"];
@@ -30,11 +30,17 @@ function ProfileView() {
 
   // Stats: how many things you've logged in each medium
   const counts = Object.entries(MEDIA)
-    .map(([m, label]) => [label, logs.filter((p) => findTitle(p.title).medium === m).length] as const)
+    .map(([m, label]) => [label, logs.filter((p) => p.title.medium === m).length] as const)
     .filter(([, n]) => n > 0);
 
   // Favorites: your highest-rated titles
-  const favorites = [...new Set([...logs].sort((a, b) => b.rating - a.rating).filter((p) => p.rating >= 4).map((p) => p.title))].slice(0, 4);
+  const favorites: TitleRef[] = [];
+  [...logs]
+    .sort((a, b) => b.rating - a.rating)
+    .filter((p) => p.rating >= 4)
+    .forEach((p) => {
+      if (favorites.length < 4 && !favorites.some((f) => f.key === p.title.key)) favorites.push(p.title);
+    });
 
   const statsBlock = profile.show_stats && (
     <div className="stats" key="stats">
@@ -61,7 +67,7 @@ function ProfileView() {
       {favorites.length ? (
         <div className="favs">
           {favorites.map((t) => (
-            <Poster key={t} title={t} width="auto" />
+            <Poster key={t.key} title={t} width="auto" />
           ))}
         </div>
       ) : (
@@ -96,9 +102,9 @@ function ProfileView() {
               <div className="rev" key={p.id} style={{ alignItems: "center" }}>
                 <Poster title={p.title} width={40} label={false} />
                 <div style={{ minWidth: 0 }}>
-                  <strong>{p.title}</strong>
+                  <strong>{p.title.name}</strong>
                   <div className="sub">
-                    {findTitle(p.title).medium} · {p.time}
+                    {p.title.medium} · {p.time}
                     {p.rating > 0 && (
                       <>
                         {" · "}

@@ -106,3 +106,10 @@ create policy "upload own photos" on storage.objects for insert to authenticated
 drop policy if exists "delete own photos" on storage.objects;
 create policy "delete own photos" on storage.objects for delete to authenticated
   using (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Update 2: title details from catalog search (safe to run more than once)
+alter table public.posts add column if not exists title_key text;
+alter table public.posts add column if not exists year int;
+alter table public.posts add column if not exists creator text;
+alter table public.posts add column if not exists poster_url text;
+create index if not exists posts_title_key_idx on public.posts (title_key);

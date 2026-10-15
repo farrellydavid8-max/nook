@@ -6,13 +6,13 @@ import PostCard from "@/components/PostCard";
 import SetupNotice from "@/components/SetupNotice";
 import SideRail from "@/components/SideRail";
 import { SearchIcon } from "@/components/Icons";
-import { findTitle, MEDIA, type Medium } from "@/lib/data";
+import { MEDIA, type Medium } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 export default function FeedPage() {
   const { configured, posts, postsLoaded, user, loading } = useStore();
   const [filter, setFilter] = useState<"All" | Medium>("All");
-  const list = posts.filter((p) => filter === "All" || findTitle(p.title).medium === filter);
+  const list = posts.filter((p) => filter === "All" || p.title.medium === filter);
 
   return (
     <div className="feed-layout">
@@ -25,7 +25,7 @@ export default function FeedPage() {
           <span className="desktop-only page-title">Your feed</span>
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <Link href="/title/dune-part-two" className="iconbtn" aria-label="Explore titles">
+          <Link href="/explore" className="iconbtn" aria-label="Search titles">
             <SearchIcon />
           </Link>
           {!loading && !user && configured && (

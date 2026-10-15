@@ -1,68 +1,98 @@
 "use client";
 
 import Link from "next/link";
-import { notFound, useParams } from "next/navigation";
-import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { BackIcon } from "@/components/Icons";
-import { Avatar, Shot } from "@/components/Media";
-import { slugify, stars, titleBySlug, type LogPost, type PhotoPost } from "@/lib/data";
+import { Avatar, PosterArt, Shot } from "@/components/Media";
+import { colorFor, describe, stars, type LogPost, type PhotoPost, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 type Tab = "reviews" | "photos";
 
 export default function TitlePage() {
-  const { slug } = useParams<{ slug: string }>();
-  const { posts, wants, toggleWant, toast } = useStore();
+  const router = useRouter();
+  const key = decodeURIComponent(useParams<{ key: string }>().key);
+  const { posts, postsLoaded, wants, toggleWant, toast } = useStore();
   const [tab, setTab] = useState<Tab>("reviews");
-  const t = titleBySlug(slug);
-  if (!t) notFound();
+  const [fetched, setFetched] = useState<TitleRef | null>(null);
+  const [lookupDone, setLookupDone] = useState(key.startsWith("manual-"));
 
-  const logs = posts.filter((p): p is LogPost => p.type === "log" && p.title === t.name);
+  useEffect(() => {
+    if (key.startsWith("manual-")) return;
+    let cancelled = false;
+    fetch(`/api/title?key=${encodeURIComponent(key)}`)
+      .then((r) => r.json())
+      .then((d) => !cancelled && setFetched(d.title ?? null))
+      .catch(() => {})
+      .finally(() => !cancelled && setLookupDone(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [key]);
+
+  const here = posts.filter((p) => p.title.key === key);
+  // Prefer fresh catalog details; fall back to what was saved with posts
+  const t: TitleRef | null = fetched ?? here[0]?.title ?? null;
+
+  if (!t) {
+    return (
+      <section className="screen narrow">
+        <header className="sheethead">
+          <button className="iconbtn" aria-label="Back" onClick={() => router.back()}>
+            <BackIcon />
+          </button>
+        </header>
+        <div className="empty">{lookupDone && postsLoaded ? "We couldn't find this title." : "Loading…"}</div>
+      </section>
+    );
+  }
+
+  const logs = here.filter((p): p is LogPost => p.type === "log");
   const rated = logs.filter((p) => p.rating > 0);
-  const photos = posts.filter((p): p is PhotoPost => p.type === "photo" && p.title === t.name);
+  const photos = here.filter((p): p is PhotoPost => p.type === "photo");
   const avg = rated.length ? (rated.reduce((a, p) => a + p.rating, 0) / rated.length).toFixed(1) : "–";
-
-  // Rating spread in half-star steps, for the little bar chart
   const counts = Array(10).fill(0);
   rated.forEach((p) => counts[Math.round(p.rating * 2) - 1]++);
   const max = Math.max(1, ...counts);
-  const wanted = wants.has(t.name);
+  const wanted = wants.has(t.key);
+  const keyParam = encodeURIComponent(t.key);
 
   return (
     <section aria-label={t.name}>
-      <div className="backdrop" style={{ background: `linear-gradient(transparent 40%, var(--bg)), ${t.color}` }}>
-        <Link href="/" className="iconbtn" aria-label="Back to feed">
+      <div className="backdrop" style={{ background: `linear-gradient(transparent 30%, var(--bg)), ${colorFor(t.name)}` }}>
+        {t.poster && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="backdrop-img" src={t.poster} alt="" aria-hidden="true" />
+        )}
+        <button className="iconbtn" aria-label="Back" onClick={() => router.back()}>
           <BackIcon />
-        </Link>
+        </button>
       </div>
       <div className="inset wide">
         <div className="thead">
-          <div className="poster" style={{ background: t.color }}>
-            {t.name}
-          </div>
+          <PosterArt title={t} />
           <div className="thead-text">
             <h1>{t.name}</h1>
-            <div className="sub">
-              {t.medium} · {t.year} · {t.by}
-            </div>
+            <div className="sub">{describe(t)}</div>
           </div>
         </div>
 
         <div className="actions">
-          <Link href={`/log?title=${slugify(t.name)}`} className="btn primary">
+          <Link href={`/log?title=${keyParam}`} className="btn primary">
             Log
           </Link>
           <button
             className="btn"
             aria-pressed={wanted}
             onClick={() => {
-              toggleWant(t.name);
+              toggleWant(t.key);
               toast(wanted ? "Removed from Want to" : "Added to Want to");
             }}
           >
             {wanted ? "On your list" : "Want to"}
           </button>
-          <Link href={`/post?title=${slugify(t.name)}`} className="btn">
+          <Link href={`/post?title=${keyParam}`} className="btn">
             Post photos
           </Link>
         </div>

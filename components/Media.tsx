@@ -1,13 +1,31 @@
+"use client";
+
 // Small building blocks: posters, photo tiles and avatars.
 
 import Link from "next/link";
-import { FILTERS, findTitle, slugify, type FilterName } from "@/lib/data";
+import { useState } from "react";
+import { FILTERS, colorFor, titleHref, type FilterName, type TitleRef } from "@/lib/data";
 
-export function Poster({ title, width, label = true }: { title: string; width?: number | string; label?: boolean }) {
-  const t = findTitle(title);
+// Cover art when the catalog has it; otherwise a colored block with the name.
+export function PosterArt({ title, label = true, className = "poster" }: { title: TitleRef; label?: boolean; className?: string }) {
+  const [broken, setBroken] = useState(false);
+  const showImage = title.poster && !broken;
   return (
-    <Link href={`/title/${slugify(title)}`} className="poster" style={{ background: t.color, width }} aria-label={`Open ${title}`}>
-      {label ? title : null}
+    <span className={className} style={{ background: colorFor(title.name) }}>
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={title.poster} alt="" loading="lazy" onError={() => setBroken(true)} />
+      ) : label ? (
+        title.name
+      ) : null}
+    </span>
+  );
+}
+
+export function Poster({ title, width, label = true }: { title: TitleRef; width?: number | string; label?: boolean }) {
+  return (
+    <Link href={titleHref(title)} className="poster-link" style={{ width }} aria-label={`Open ${title.name}`}>
+      <PosterArt title={title} label={label} />
     </Link>
   );
 }

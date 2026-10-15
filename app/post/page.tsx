@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import RequireAuth from "@/components/RequireAuth";
 import { CloseIcon, PhotoIcon, PlusIcon } from "@/components/Icons";
-import { FILTERS, TITLES, titleBySlug, type FilterName } from "@/lib/data";
+import TitlePicker from "@/components/TitlePicker";
+import { FILTERS, type FilterName, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 const MAX_PHOTOS = 6;
@@ -21,7 +22,7 @@ function PhotoForm() {
   const [selected, setSelected] = useState(0);
   const [filter, setFilter] = useState<FilterName>("Dusk");
   const [strength, setStrength] = useState(70);
-  const [title, setTitle] = useState(titleBySlug(params.get("title") ?? "")?.name ?? TITLES[0].name);
+  const [title, setTitle] = useState<TitleRef | null>(null);
   const [caption, setCaption] = useState("");
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +57,7 @@ function PhotoForm() {
   }
 
   async function post() {
+    if (!title) return setError("Tag the title these photos are from.");
     setPosting(true);
     setError(null);
     const problem = await addPhotoPost({ title, files: picked.map((p) => p.file), filter, strength, caption: caption.trim() });
@@ -72,7 +74,7 @@ function PhotoForm() {
           <CloseIcon />
         </Link>
         <h1>New photo post</h1>
-        <button type="button" className="pill" onClick={post} disabled={posting || !picked.length}>
+        <button type="button" className="pill" onClick={post} disabled={posting || !picked.length || !title}>
           {posting ? "Posting…" : "Post"}
         </button>
       </header>
@@ -141,16 +143,10 @@ function PhotoForm() {
         </>
       )}
 
-      <label className="field" htmlFor="photo-title">
+      <div className="field">
         Tag a title
-        <select id="photo-title" value={title} onChange={(e) => setTitle(e.target.value)}>
-          {TITLES.map((t) => (
-            <option key={t.name} value={t.name}>
-              {t.name} ({t.medium})
-            </option>
-          ))}
-        </select>
-      </label>
+        <TitlePicker value={title} onChange={setTitle} initialKey={params.get("title")} />
+      </div>
 
       <label className="field" htmlFor="photo-caption">
         Caption

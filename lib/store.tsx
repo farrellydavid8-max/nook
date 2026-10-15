@@ -4,7 +4,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { findTitle, timeAgo, type FilterName, type Post, type Profile } from "./data";
+import { manualKey, timeAgo, type FilterName, type Medium, type Post, type Profile, type TitleRef } from "./data";
 import { getSupabase, isConfigured } from "./supabase";
 
 type Row = {
@@ -12,6 +12,11 @@ type Row = {
   user_id: string;
   type: "log" | "photo";
   title: string;
+  title_key: string | null;
+  medium: string;
+  year: number | null;
+  creator: string | null;
+  poster_url: string | null;
   status: string | null;
   progress: string | null;
   rating: number | null;
@@ -28,7 +33,7 @@ type Row = {
 };
 
 const SELECT =
-  "id,user_id,type,title,status,progress,rating,review,letterboxd_url,spoiler,photos,filter,filter_strength,caption,created_at,author:profiles(username,avatar_color),likes(user_id)";
+  "id,user_id,type,title,title_key,medium,year,creator,poster_url,status,progress,rating,review,letterboxd_url,spoiler,photos,filter,filter_strength,caption,created_at,author:profiles(username,avatar_color),likes(user_id)";
 
 function toPost(r: Row, me?: string): Post {
   const base = {
@@ -36,7 +41,14 @@ function toPost(r: Row, me?: string): Post {
     userId: r.user_id,
     user: r.author?.username ?? "someone",
     avatarColor: r.author?.avatar_color ?? "#4A4A52",
-    title: r.title,
+    title: {
+      key: r.title_key ?? manualKey(r.title, r.medium as Medium),
+      name: r.title,
+      medium: r.medium as Medium,
+      year: r.year ?? undefined,
+      creator: r.creator ?? undefined,
+      poster: r.poster_url ?? undefined,
+    },
     time: timeAgo(r.created_at),
     likes: r.likes.length,
     liked: Boolean(me && r.likes.some((l) => l.user_id === me)),
@@ -64,7 +76,7 @@ function toPost(r: Row, me?: string): Post {
 }
 
 export type NewLog = {
-  title: string;
+  title: TitleRef;
   status: string;
   progress: string;
   loggedOn: string;
@@ -75,7 +87,7 @@ export type NewLog = {
 };
 
 export type NewPhotoPost = {
-  title: string;
+  title: TitleRef;
   files: File[];
   filter: FilterName;
   strength: number;
@@ -99,6 +111,16 @@ type Store = {
   toggleWant: (title: string) => void;
   toast: (msg: string) => void;
 };
+
+// The title details stored with each post
+const titleColumns = (t: TitleRef) => ({
+  title: t.name,
+  title_key: t.key,
+  medium: t.medium,
+  year: t.year ?? null,
+  creator: t.creator ?? null,
+  poster_url: t.poster ?? null,
+});
 
 const Ctx = createContext<Store | null>(null);
 
@@ -166,8 +188,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         .insert({
           user_id: user.id,
           type: "log",
-          title: l.title,
-          medium: findTitle(l.title).medium,
+          ...titleColumns(l.title),
           status: l.status,
           progress: l.progress,
           logged_on: l.loggedOn || null,
@@ -199,8 +220,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const { error } = await sb.from("posts").insert({
         user_id: user.id,
         type: "photo",
-        title: p.title,
-        medium: findTitle(p.title).medium,
+        ...titleColumns(p.title),
         photos: urls,
         filter: p.filter,
         filter_strength: p.strength,

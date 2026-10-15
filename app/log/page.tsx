@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import RequireAuth from "@/components/RequireAuth";
-import { LETTERBOXD, PROGRESS_LABEL, TITLES, findTitle, normalizeUrl, titleBySlug } from "@/lib/data";
+import TitlePicker from "@/components/TitlePicker";
+import { LETTERBOXD, PROGRESS, normalizeUrl, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 const STATUSES = ["In progress", "Finished", "Revisit", "Dropped"];
@@ -14,10 +15,9 @@ function LogForm() {
   const params = useSearchParams();
   const { addLog, toast } = useStore();
 
-  const initial = titleBySlug(params.get("title") ?? "")?.name ?? TITLES[0].name;
-  const [title, setTitle] = useState(initial);
+  const [title, setTitle] = useState<TitleRef | null>(null);
   const [status, setStatus] = useState("Finished");
-  const [progress, setProgress] = useState(findTitle(initial).progress);
+  const [progress, setProgress] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [rating, setRating] = useState(0);
   const [text, setText] = useState("");
@@ -27,10 +27,9 @@ function LogForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const t = findTitle(title);
-
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (!title) return setError("Choose what you're logging first.");
     const link = lb.trim();
     if (link && !LETTERBOXD.test(link)) {
       setLbError(true);
@@ -50,7 +49,7 @@ function LogForm() {
     });
     setSaving(false);
     if (problem) return setError(problem);
-    toast(`Logged ${title}`);
+    toast(`Logged ${title.name}`);
     router.push("/");
   }
 
@@ -61,7 +60,7 @@ function LogForm() {
           Cancel
         </Link>
         <h1>New log</h1>
-        <button type="submit" className="pill" disabled={saving}>
+        <button type="submit" className="pill" disabled={saving || !title}>
           {saving ? "Saving…" : "Save"}
         </button>
       </header>
@@ -72,23 +71,10 @@ function LogForm() {
         </p>
       )}
 
-      <label className="field" htmlFor="log-title">
+      <div className="field">
         What are you logging?
-        <select
-          id="log-title"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            setProgress(findTitle(e.target.value).progress);
-          }}
-        >
-          {TITLES.map((x) => (
-            <option key={x.name} value={x.name}>
-              {x.name} ({x.medium})
-            </option>
-          ))}
-        </select>
-      </label>
+        <TitlePicker value={title} onChange={setTitle} initialKey={params.get("title")} />
+      </div>
 
       <div className="field">
         Status
@@ -103,8 +89,8 @@ function LogForm() {
 
       <div className="row2">
         <label className="field" htmlFor="log-progress">
-          {PROGRESS_LABEL[t.medium]}
-          <input id="log-progress" value={progress} onChange={(e) => setProgress(e.target.value)} />
+          {title ? PROGRESS[title.medium].label : "Progress"}
+          <input id="log-progress" placeholder={title ? PROGRESS[title.medium].hint : ""} value={progress} onChange={(e) => setProgress(e.target.value)} />
         </label>
         <label className="field" htmlFor="log-date">
           Date

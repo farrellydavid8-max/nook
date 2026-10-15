@@ -1,40 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { TITLES, slugify } from "@/lib/data";
+import { titleHref, type TitleRef } from "@/lib/data";
 import { useStore } from "@/lib/store";
+import { PosterArt } from "./Media";
 
 // The right-hand column on the desktop feed. Hidden on phones.
 export default function SideRail() {
   const { posts, user } = useStore();
 
-  // Titles with the most activity on Nook, then the rest of the catalog
-  const activity = new Map<string, number>();
-  posts.forEach((p) => activity.set(p.title, (activity.get(p.title) ?? 0) + 1));
-  const ranked = [...TITLES].sort((a, b) => (activity.get(b.name) ?? 0) - (activity.get(a.name) ?? 0)).slice(0, 5);
+  // Titles with the most posts on Nook
+  const byKey = new Map<string, { title: TitleRef; n: number }>();
+  posts.forEach((p) => {
+    const entry = byKey.get(p.title.key) ?? { title: p.title, n: 0 };
+    entry.n += 1;
+    byKey.set(p.title.key, entry);
+  });
+  const ranked = [...byKey.values()].sort((a, b) => b.n - a.n).slice(0, 5);
 
   return (
     <aside className="rail" aria-label="Popular on Nook">
       <div className="rail-card">
         <h2>Popular on Nook</h2>
-        <ol className="rail-list">
-          {ranked.map((t) => {
-            const n = activity.get(t.name) ?? 0;
-            return (
-              <li key={t.name}>
-                <Link href={`/title/${slugify(t.name)}`}>
-                  <span className="rail-poster" style={{ background: t.color }} aria-hidden="true" />
+        {ranked.length ? (
+          <ol className="rail-list">
+            {ranked.map(({ title, n }) => (
+              <li key={title.key}>
+                <Link href={titleHref(title)}>
+                  <PosterArt title={title} label={false} className="poster rail-poster" />
                   <span style={{ minWidth: 0 }}>
-                    <strong>{t.name}</strong>
+                    <strong>{title.name}</strong>
                     <span className="sub">
-                      {t.medium} · {n ? `${n} ${n === 1 ? "post" : "posts"}` : "No posts yet"}
+                      {title.medium} · {n} {n === 1 ? "post" : "posts"}
                     </span>
                   </span>
                 </Link>
               </li>
-            );
-          })}
-        </ol>
+            ))}
+          </ol>
+        ) : (
+          <p className="sub">Titles people post about will show up here.</p>
+        )}
       </div>
       <div className="rail-card">
         <h2>{user ? "Finished something?" : "Join Nook"}</h2>

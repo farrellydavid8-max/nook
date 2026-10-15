@@ -1,15 +1,15 @@
-// Shared types, the starter title catalog and small helpers.
-// The catalog is a short built-in list for now; real search (TMDB, IGDB, AniList…) replaces it later.
+// Shared types and small helpers.
 
 export type Medium = "Film" | "TV" | "Game" | "Anime" | "Book" | "Manga" | "Comic";
 
-export type Title = {
+// A title from any catalog (or added by hand). `key` is "<source>-<id>", e.g. "tvmaze-169".
+export type TitleRef = {
+  key: string;
   name: string;
   medium: Medium;
-  year: number;
-  by: string;
-  color: string; // stands in for the poster until real images are connected
-  progress: string;
+  year?: number;
+  creator?: string;
+  poster?: string;
 };
 
 export const FILTERS = {
@@ -26,7 +26,7 @@ type PostBase = {
   userId: string;
   user: string;
   avatarColor: string;
-  title: string;
+  title: TitleRef;
   time: string;
   likes: number;
   liked: boolean;
@@ -73,33 +73,33 @@ export const MEDIA: Record<Medium, string> = {
   Manga: "Manga",
   Comic: "Comics",
 };
+export const MEDIUMS = Object.keys(MEDIA) as Medium[];
 
-export const PROGRESS_LABEL: Record<Medium, string> = {
-  Film: "Watched",
-  TV: "Episode",
-  Game: "Hours played",
-  Anime: "Episode",
-  Book: "Pages",
-  Manga: "Chapter",
-  Comic: "Issue",
+export const PROGRESS: Record<Medium, { label: string; hint: string }> = {
+  Film: { label: "Watched", hint: "e.g. First watch" },
+  TV: { label: "Episode", hint: "e.g. S2 E5" },
+  Game: { label: "Hours played", hint: "e.g. 40 hours" },
+  Anime: { label: "Episode", hint: "e.g. Ep 12 / 24" },
+  Book: { label: "Pages", hint: "e.g. 180 / 320" },
+  Manga: { label: "Chapter", hint: "e.g. Ch. 45" },
+  Comic: { label: "Issue", hint: "e.g. Issue 12" },
 };
 
-export const TITLES: Title[] = [
-  { name: "Perfect Days", medium: "Film", year: 2023, by: "Wim Wenders", color: "#2E4A52", progress: "Watched once" },
-  { name: "Dune: Part Two", medium: "Film", year: 2024, by: "Denis Villeneuve", color: "#6B5233", progress: "Watched once" },
-  { name: "Elden Ring", medium: "Game", year: 2022, by: "FromSoftware", color: "#4A3F2A", progress: "120 hours" },
-  { name: "Frieren", medium: "Anime", year: 2023, by: "Madhouse", color: "#3D4A5E", progress: "Ep 28 / 28" },
-  { name: "Piranesi", medium: "Book", year: 2020, by: "Susanna Clarke", color: "#4F5B3E", progress: "272 / 272" },
-  { name: "Chainsaw Man", medium: "Manga", year: 2018, by: "Tatsuki Fujimoto", color: "#6E3A35", progress: "Ch. 97" },
-  { name: "Saga", medium: "Comic", year: 2012, by: "Vaughan & Staples", color: "#4A3550", progress: "Issue 54" },
-  { name: "The Bear", medium: "TV", year: 2022, by: "FX", color: "#3E4A4A", progress: "S3 E10" },
-];
-
 export const slugify = (s: string) =>
-  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80);
 
-export const findTitle = (name: string) => TITLES.find((t) => t.name === name) ?? TITLES[0];
-export const titleBySlug = (slug: string) => TITLES.find((t) => slugify(t.name) === slug);
+// Titles added by hand get a key from their name, so everyone who adds "My Zine" lands on the same page.
+export const manualKey = (name: string, medium: Medium) => `manual-${medium.toLowerCase()}.${slugify(name)}`;
+
+export const titleHref = (t: TitleRef) => `/title/${encodeURIComponent(t.key)}`;
+
+// A steady color per title, used when there's no poster image
+const SWATCHES = ["#2E4A52", "#6B5233", "#4A3F2A", "#3D4A5E", "#4F5B3E", "#6E3A35", "#4A3550", "#3E4A4A"];
+export function colorFor(s: string) {
+  let h = 0;
+  for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return SWATCHES[h % SWATCHES.length];
+}
 
 export const stars = (r: number) => "★".repeat(Math.floor(r)) + (r % 1 ? "½" : "");
 
@@ -115,3 +115,5 @@ export function timeAgo(iso: string) {
 // Accepts full Letterboxd links and their short boxd.it links
 export const LETTERBOXD = /^(https?:\/\/)?(www\.)?(letterboxd\.com|boxd\.it)\//i;
 export const normalizeUrl = (u: string) => (u.startsWith("http") ? u : `https://${u}`);
+
+export const describe = (t: TitleRef) => [t.medium, t.year, t.creator].filter(Boolean).join(" · ");

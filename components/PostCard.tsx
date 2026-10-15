@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { findTitle, slugify, stars, type Post } from "@/lib/data";
+import { stars, titleHref, type Post } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { HeartIcon, LinkIcon } from "./Icons";
 import { Avatar, Poster, Shot } from "./Media";
 
 export default function PostCard({ post }: { post: Post }) {
   const { toggleLike } = useStore();
-  const t = findTitle(post.title);
-  const titleHref = `/title/${slugify(post.title)}`;
+  const t = post.title;
 
   const likeButton = (
     <button className="like" aria-pressed={post.liked} aria-label={`Like, ${post.likes} likes`} onClick={() => toggleLike(post)}>
@@ -21,7 +20,7 @@ export default function PostCard({ post }: { post: Post }) {
   const action =
     post.type === "photo"
       ? `posted ${post.shots.length} ${post.shots.length === 1 ? "shot" : "shots"}`
-      : `logged ${t.medium === "Anime" ? "an anime" : "a " + t.medium.toLowerCase()}`;
+      : `logged ${t.medium === "Anime" ? "an anime" : t.medium === "Manga" ? "manga" : "a " + t.medium.toLowerCase()}`;
 
   return (
     <article className="post">
@@ -46,8 +45,8 @@ export default function PostCard({ post }: { post: Post }) {
           <div className="postfoot">
             <span>
               from{" "}
-              <Link href={titleHref} className="inline-title">
-                {post.title}
+              <Link href={titleHref(t)} className="inline-title">
+                {t.name}
               </Link>{" "}
               <span className="meta">· {t.medium}</span>
             </span>
@@ -57,13 +56,13 @@ export default function PostCard({ post }: { post: Post }) {
       ) : (
         <>
           <div className="logrow">
-            <Poster title={post.title} />
+            <Poster title={t} />
             <div style={{ minWidth: 0 }}>
-              <Link href={titleHref} className="ptitle">
-                {post.title}
+              <Link href={titleHref(t)} className="ptitle">
+                {t.name}
               </Link>
               <div className="sub">
-                {t.medium} · {t.year}
+                {[t.medium, t.year].filter(Boolean).join(" · ")}
                 {post.status && post.status !== "Finished" ? ` · ${post.status}` : ""}
               </div>
               {post.rating > 0 && (
