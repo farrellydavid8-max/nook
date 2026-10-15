@@ -52,5 +52,15 @@ export default function TitlePicker({
     );
   }
 
-  return <TitleSearch onPick={onChange} autoFocus />;
+  // Some catalogs leave out details like the year in search results; fill them in after picking
+  async function pick(t: TitleRef) {
+    onChange(t);
+    if (t.year || t.key.startsWith("manual-")) return;
+    try {
+      const d = await (await fetch(`/api/title?key=${encodeURIComponent(t.key)}`)).json();
+      if (d.title) onChange({ ...t, year: d.title.year ?? t.year, creator: t.creator ?? d.title.creator, poster: t.poster ?? d.title.poster });
+    } catch {}
+  }
+
+  return <TitleSearch onPick={pick} autoFocus />;
 }
