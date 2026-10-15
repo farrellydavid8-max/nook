@@ -13,12 +13,20 @@ export async function GET(req: Request) {
   const steamId = await verifySteamLogin(url.searchParams, url.origin);
   if (!steamId) return back("failed");
 
-  const db = adminDb();
+  let db;
+  try {
+    db = adminDb();
+  } catch {
+    return back("dberror");
+  }
   const { data: taken } = await db.from("steam_links").select("user_id").eq("steam_id", steamId).maybeSingle();
   if (taken && taken.user_id !== user.id) return back("taken");
 
   const { error } = await db.from("steam_links").upsert({ user_id: user.id, steam_id: steamId, linked_at: new Date().toISOString() });
-  if (error) return back("failed");
+  if (error) {
+    console.error("steam link save failed", error.message);
+    return back("dberror");
+  }
 
   const result = await syncSteam(user.id);
   return back(result.ok ? "linked" : "private");

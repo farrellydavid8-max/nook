@@ -18,6 +18,7 @@ function GoToMyProfile() {
       private: "Steam connected, but your game details are private. Make them public in Steam, then tap Sync now in Customize.",
       taken: "That Steam account is already connected to a different Nook account.",
       failed: "Steam sign-in didn't go through. Try connecting again.",
+      dberror: "Steam signed you in, but Nook couldn't save the connection. The database update or secret key still needs setting up.",
     };
     if (steam && messages[steam]) toast(messages[steam]);
     router.replace(`/u/${profile.username}`);

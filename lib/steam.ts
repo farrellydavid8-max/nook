@@ -25,13 +25,30 @@ export function steamLoginUrl(origin: string) {
 
 // Ask Steam whether the sign-in it sent back is genuine; returns the 64-bit Steam ID.
 export async function verifySteamLogin(params: URLSearchParams, origin: string): Promise<string | null> {
-  if (params.get("openid.mode") !== "id_res") return null;
-  if (!params.get("openid.return_to")?.startsWith(`${origin}/api/steam/callback`)) return null;
+  if (params.get("openid.mode") !== "id_res") {
+    console.error("steam openid: unexpected mode", params.get("openid.mode"));
+    return null;
+  }
+  // Compare hosts only, so http/https or proxy differences don't break it
+  const returnHost = (() => {
+    try {
+      return new URL(params.get("openid.return_to") ?? "").host;
+    } catch {
+      return "";
+    }
+  })();
+  if (returnHost !== new URL(origin).host) {
+    console.error("steam openid: return_to host mismatch", returnHost, origin);
+    return null;
+  }
   const check = new URLSearchParams(params);
   check.set("openid.mode", "check_authentication");
   const res = await fetch(OPENID, { method: "POST", body: check, headers: { "Content-Type": "application/x-www-form-urlencoded" }, cache: "no-store" });
   const text = await res.text();
-  if (!/is_valid\s*:\s*true/.test(text)) return null;
+  if (!/is_valid\s*:\s*true/.test(text)) {
+    console.error("steam openid: not valid", res.status, text.slice(0, 200));
+    return null;
+  }
   const match = params.get("openid.claimed_id")?.match(/^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/);
   return match?.[1] ?? null;
 }
