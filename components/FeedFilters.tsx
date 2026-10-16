@@ -70,15 +70,7 @@ export default function FeedFilters({ prefs, save }: { prefs: Prefs; save: (p: P
 
   return (
     <>
-      <div className="chips" role="group" aria-label="Filter by type" style={{ paddingTop: 12 }}>
-        <button className="chip" aria-pressed={selected.size === 0} onClick={() => save({ ...prefs, selected: [] })}>
-          All
-        </button>
-        {prefs.shown.map((m) => (
-          <button key={m} className="chip" aria-pressed={selected.has(m)} onClick={() => toggle(m)}>
-            {MEDIA[m]}
-          </button>
-        ))}
+      <div className="chips feed-chips" role="group" aria-label="Filter by type" style={{ paddingTop: 12 }}>
         <button
           className="chip chip-edit"
           aria-label="Choose which filters show"
@@ -92,6 +84,14 @@ export default function FeedFilters({ prefs, save }: { prefs: Prefs; save: (p: P
           </svg>
           Edit
         </button>
+        <button className="chip" aria-pressed={selected.size === 0} onClick={() => save({ ...prefs, selected: [] })}>
+          All
+        </button>
+        {prefs.shown.map((m) => (
+          <button key={m} className="chip" aria-pressed={selected.has(m)} onClick={() => toggle(m)}>
+            {MEDIA[m]}
+          </button>
+        ))}
       </div>
 
       {editing && (

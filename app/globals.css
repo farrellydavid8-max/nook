@@ -411,6 +411,7 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
   .tab.plus[aria-current="page"] { background: var(--accent); color: var(--on-accent); }
   .tab.plus[aria-current="page"] svg { color: var(--on-accent); }
   .tab-label { display: inline; }
+  .feed-chips { flex-wrap: wrap; overflow: visible; }
   .desktop-tab { display: flex !important; }
   .tab .badge { position: static; margin-left: auto; }
   .side-foot { display: block; order: 11; margin-top: auto; padding: 0 6px; font-size: 13px; color: var(--muted); }
