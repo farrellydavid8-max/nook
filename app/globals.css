@@ -305,6 +305,8 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 
 /* People, invites, legal */
 .people li { display: flex; align-items: center; gap: 10px; padding: 6px 4px; }
+.tresults.people .btn { width: auto; flex: none; padding: 0 16px; justify-content: center; }
+.tresults.people .btn:not(.primary) { background: transparent; color: var(--fg); }
 .person { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; text-decoration: none; padding: 4px; border-radius: 10px; }
 .person:hover strong { text-decoration: underline; }
 .person strong { display: block; }
