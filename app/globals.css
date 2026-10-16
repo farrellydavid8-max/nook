@@ -381,6 +381,14 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 .chip-edit { display: inline-flex; align-items: center; gap: 6px; border-style: dashed; color: var(--muted); }
 .chip-edit:hover { color: var(--fg); border-color: var(--accent); }
 
+/* Private accounts */
+.pname .lock { margin-left: 8px; vertical-align: 2px; color: var(--muted); }
+.private-wall { margin-top: 24px; padding: 32px 16px; border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; color: var(--muted); }
+.private-wall strong { color: var(--fg); font-size: 16px; }
+.requests { display: flex; flex-direction: column; gap: 4px; margin-bottom: 18px; padding: 12px; border-radius: 14px; background: var(--surface); }
+.request { display: flex; align-items: center; gap: 12px; padding: 6px 4px; }
+.request a { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-decoration: none; }
+
 /* ---------- Pieces that only show on one screen size ---------- */
 .thead-text { padding-top: 62px; min-width: 0; }
 .tab-label, .side-brand, .side-foot, .desktop-only, .rail { display: none; }

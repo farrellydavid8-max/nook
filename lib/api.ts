@@ -204,24 +204,64 @@ export async function isUsernameTaken(username: string, exceptId?: string) {
   return Boolean(data && data.id !== exceptId);
 }
 
+// Everyone you follow, split into approved and still-waiting requests.
+// (Before update-11 there's no status column, so everything counts as approved.)
+export async function fetchFollowState(me: string): Promise<{ accepted: string[]; pending: string[] }> {
+  let res: { data: unknown; error: { code?: string } | null } = await sb().from("follows").select("following_id,status").eq("follower_id", me);
+  if (res.error) res = await sb().from("follows").select("following_id").eq("follower_id", me);
+  const rows = (res.data ?? []) as { following_id: string; status?: string }[];
+  return {
+    accepted: rows.filter((r) => (r.status ?? "accepted") === "accepted").map((r) => r.following_id),
+    pending: rows.filter((r) => r.status === "pending").map((r) => r.following_id),
+  };
+}
+
 export async function fetchFollowingIds(me: string): Promise<string[]> {
-  const { data } = await sb().from("follows").select("following_id").eq("follower_id", me);
-  return (data ?? []).map((r) => r.following_id as string);
+  return (await fetchFollowState(me)).accepted;
+}
+
+export type FollowRequest = { id: string; username: string; avatar_color: string; avatar_url: string | null };
+
+export async function fetchFollowRequests(me: string): Promise<FollowRequest[]> {
+  const { data, error } = await sb()
+    .from("follows")
+    .select("follower:profiles!follows_follower_id_fkey(id,username,avatar_color,avatar_url)")
+    .eq("following_id", me)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return ((data ?? []) as unknown as { follower: FollowRequest | null }[]).map((r) => r.follower).filter(Boolean) as FollowRequest[];
+}
+
+export async function answerFollowRequest(me: string, follower: string, accept: boolean) {
+  const { error } = accept
+    ? await sb().from("follows").update({ status: "accepted" }).match({ follower_id: follower, following_id: me })
+    : await sb().from("follows").delete().match({ follower_id: follower, following_id: me });
+  if (error) throw error;
+  if (!accept) await sb().from("notifications").delete().match({ user_id: me, actor_id: follower, type: "follow_request" });
 }
 
 export async function followCounts(userId: string) {
-  const [a, b] = await Promise.all([
-    sb().from("follows").select("*", { count: "exact", head: true }).eq("following_id", userId),
-    sb().from("follows").select("*", { count: "exact", head: true }).eq("follower_id", userId),
-  ]);
-  return { followers: a.count ?? 0, following: b.count ?? 0 };
+  const count = async (col: "following_id" | "follower_id") => {
+    const res = await sb().from("follows").select("*", { count: "exact", head: true }).eq(col, userId).neq("status", "pending");
+    if (!res.error) return res.count ?? 0;
+    return (await sb().from("follows").select("*", { count: "exact", head: true }).eq(col, userId)).count ?? 0;
+  };
+  const [followers, following] = await Promise.all([count("following_id"), count("follower_id")]);
+  return { followers, following };
 }
 
-export async function setFollow(me: string, other: string, follow: boolean) {
-  const { error } = follow
-    ? await sb().from("follows").insert({ follower_id: me, following_id: other })
-    : await sb().from("follows").delete().match({ follower_id: me, following_id: other });
+// Returns "accepted", "pending" (a request to a private account) or "none" after unfollowing
+export async function setFollow(me: string, other: string, follow: boolean): Promise<"accepted" | "pending" | "none"> {
+  if (!follow) {
+    const { error } = await sb().from("follows").delete().match({ follower_id: me, following_id: other });
+    if (error) throw error;
+    return "none";
+  }
+  const { error } = await sb().from("follows").insert({ follower_id: me, following_id: other });
   if (error) throw error;
+  const { data } = await sb().from("follows").select("status").match({ follower_id: me, following_id: other }).maybeSingle();
+  return (data as { status?: string } | null)?.status === "pending" ? "pending" : "accepted";
 }
 
 export async function searchPeople(q: string) {

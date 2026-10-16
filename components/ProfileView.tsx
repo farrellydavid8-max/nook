@@ -11,13 +11,14 @@ import { LinkIcon, PaletteIcon } from "./Icons";
 import { Avatar, Poster, PosterArt, Shot } from "./Media";
 import Modal from "./Modal";
 import NewListButton from "./NewListButton";
+import FollowButton from "./FollowButton";
 import PostCard from "./PostCard";
 import { inviteUrl } from "@/lib/invite";
 
 type Tab = "Diary" | "Games" | "Reviews" | "Updates" | "Lists" | "Want to";
 
 export default function ProfileView({ username }: { username: string }) {
-  const { user, profile: me, following, blocked, toggleFollow, toggleBlock, signOut, version, toast } = useStore();
+  const { user, profile: me, following, requested, blocked, toggleBlock, signOut, version, toast } = useStore();
   const [loadedProfile, setLoadedProfile] = useState<Profile | null | undefined>(undefined);
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
   const [lists, setLists] = useState<ListItem[]>([]);
@@ -78,7 +79,8 @@ export default function ProfileView({ username }: { username: string }) {
       .forEach((p) => auto.length < 4 && !auto.some((f) => f.key === p.title.key) && auto.push(p.title));
     favorites = auto;
   }
-  const followsMe = following.has(profile.id);
+  // Private accounts only show their things to approved followers
+  const canSee = isMe || !profile.is_private || following.has(profile.id);
   const year = new Date().getFullYear();
 
   const statsBlock = profile.show_stats && (
@@ -331,14 +333,20 @@ export default function ProfileView({ username }: { username: string }) {
                     Block
                   </button>
                 )}
-                <button className={`btn${followsMe ? "" : " primary"}`} aria-pressed={followsMe} onClick={() => toggleFollow(profile.id)}>
-                  {followsMe ? "Following" : "Follow"}
-                </button>
+                <FollowButton userId={profile.id} isPrivate={profile.is_private} />
               </>
             )}
           </div>
         </div>
-        <h1 className="pname">{profile.username}</h1>
+        <h1 className="pname">
+          {profile.username}
+          {profile.is_private && (
+            <svg className="lock" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" role="img" aria-label="Private account">
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 018 0v4" />
+            </svg>
+          )}
+        </h1>
         <div className="follow-counts">
           <span>
             <b>{counts.followers}</b> {counts.followers === 1 ? "follower" : "followers"}
@@ -366,7 +374,23 @@ export default function ProfileView({ username }: { username: string }) {
             Letterboxd
           </a>
         )}
-        {playingNow.length > 0 && (
+        {!canSee && (
+          <div className="private-wall">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 018 0v4" />
+            </svg>
+            <strong>This account is private</strong>
+            <span className="sub">
+              {requested.has(profile.id)
+                ? "Your follow request is waiting for approval."
+                : user
+                  ? `Follow ${profile.username} to see their logs, reviews, photos and lists.`
+                  : "Log in and follow them to see their logs, reviews, photos and lists."}
+            </span>
+          </div>
+        )}
+        {canSee && playingNow.length > 0 && (
           <div className="section">
             <div className="label" style={{ marginBottom: 8 }}>
               Playing lately
@@ -381,7 +405,7 @@ export default function ProfileView({ username }: { username: string }) {
             </div>
           </div>
         )}
-        {sections}
+        {canSee && sections}
         {isMe && (
           <p className="sub legal-line mobile-only">
             <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link>

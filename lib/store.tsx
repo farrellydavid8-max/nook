@@ -43,6 +43,8 @@ type Store = {
   user: User | null;
   profile: Profile | null;
   following: Set<string>;
+  /** Private accounts you've asked to follow that haven't approved yet */
+  requested: Set<string>;
   blocked: Set<string>;
   wants: Map<string, TitleRef>;
   unread: number;
@@ -70,6 +72,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [following, setFollowing] = useState<Set<string>>(new Set());
+  const [requested, setRequested] = useState<Set<string>>(new Set());
   const [blocked, setBlocked] = useState<Set<string>>(new Set());
   const [wants, setWants] = useState<Map<string, TitleRef>>(new Map());
   const [unread, setUnread] = useState(0);
@@ -87,20 +90,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (!u) {
       setProfile(null);
       setFollowing(new Set());
+      setRequested(new Set());
       setBlocked(new Set());
       setWants(new Map());
       setUnread(0);
       return;
     }
     const sb = getSupabase();
-    const [{ data: p }, fol, blk, wl, un] = await Promise.all([
+    const [{ data: p }, followState, blk, wl, un] = await Promise.all([
       sb.from("profiles").select("*").eq("id", u.id).maybeSingle(),
-      api.fetchFollowingIds(u.id).catch(() => [] as string[]),
+      api.fetchFollowState(u.id).catch(() => ({ accepted: [] as string[], pending: [] as string[] })),
       api.fetchBlockedIds(u.id).catch(() => [] as string[]),
       api.fetchWatchlist(u.id).catch(() => []),
       api.unreadCount(u.id).catch(() => 0),
     ]);
     setProfile((p as Profile) ?? null);
+    const fol = followState.accepted;
+    setRequested(new Set(followState.pending));
     // Arrived from a friend's invite link? Follow them once you're in.
     const invitedBy = readInvite();
     if (invitedBy && p) {
@@ -221,25 +227,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [user, bump, uploadMedia]
   );
 
+  // Follow, unfollow, or cancel a request (tapping "Requested" cancels it)
   const toggleFollow = useCallback(
     async (other: string) => {
       if (!user) return toast("Log in to follow people");
-      const now = !following.has(other);
-      setFollowing((s) => {
-        const n = new Set(s);
-        if (now) n.add(other);
-        else n.delete(other);
-        return n;
-      });
+      const now = !following.has(other) && !requested.has(other);
       try {
-        await api.setFollow(user.id, other, now);
+        const result = await api.setFollow(user.id, other, now);
+        const f = new Set(following);
+        const r = new Set(requested);
+        f.delete(other);
+        r.delete(other);
+        if (result === "accepted") f.add(other);
+        if (result === "pending") {
+          r.add(other);
+          toast("Request sent. You'll see their posts once they approve it.");
+        }
+        setFollowing(f);
+        setRequested(r);
         bump();
       } catch {
         toast("Couldn't update that follow");
-        setFollowing(new Set(await api.fetchFollowingIds(user.id)));
+        const state = await api.fetchFollowState(user.id);
+        setFollowing(new Set(state.accepted));
+        setRequested(new Set(state.pending));
       }
     },
-    [user, following, toast, bump]
+    [user, following, requested, toast, bump]
   );
 
   const toggleWant = useCallback(
@@ -316,6 +330,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       user,
       profile,
       following,
+      requested,
       blocked,
       wants,
       unread,
@@ -331,7 +346,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       version,
       bump,
     }),
-    [loading, user, profile, following, blocked, wants, unread, refreshUnread, addLog, addPhotoPost, toggleFollow, toggleWant, toggleBlock, updateProfile, signOut, toast, version, bump]
+    [loading, user, profile, following, requested, blocked, wants, unread, refreshUnread, addLog, addPhotoPost, toggleFollow, toggleWant, toggleBlock, updateProfile, signOut, toast, version, bump]
   );
 
   return (

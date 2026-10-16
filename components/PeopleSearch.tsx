@@ -6,13 +6,14 @@ import * as api from "@/lib/api";
 import { profileHref } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { SearchIcon } from "./Icons";
+import FollowButton from "./FollowButton";
 import { Avatar } from "./Media";
 
 type Person = { id: string; username: string; avatar_color: string; avatar_url: string | null; bio: string };
 
 // Find people by username and follow them right from the results.
 export default function PeopleSearch() {
-  const { user, following, blocked, toggleFollow } = useStore();
+  const { user, blocked } = useStore();
   const [q, setQ] = useState("");
   const [people, setPeople] = useState<Person[]>([]);
   const [state, setState] = useState<"idle" | "loading" | "done">("idle");
@@ -50,7 +51,6 @@ export default function PeopleSearch() {
         <ul className="tresults people">
           {people.map((p) => {
             const me = user?.id === p.id;
-            const follows = following.has(p.id);
             return (
               <li key={p.id}>
                 <Link href={profileHref(p.username)} className="person">
@@ -60,11 +60,7 @@ export default function PeopleSearch() {
                     {p.bio && <span className="sub person-bio">{p.bio}</span>}
                   </span>
                 </Link>
-                {!me && user && (
-                  <button className={`btn small${follows ? "" : " primary"}`} aria-pressed={follows} onClick={() => toggleFollow(p.id)}>
-                    {follows ? "Following" : "Follow"}
-                  </button>
-                )}
+                {!me && user && <FollowButton userId={p.id} small />}
               </li>
             );
           })}

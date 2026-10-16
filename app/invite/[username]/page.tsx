@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import FollowButton from "@/components/FollowButton";
 import { Avatar } from "@/components/Media";
 import * as api from "@/lib/api";
 import { profileHref, type Profile } from "@/lib/data";
@@ -13,7 +14,7 @@ import { useStore } from "@/lib/store";
 export default function InvitePage() {
   const router = useRouter();
   const username = decodeURIComponent(useParams<{ username: string }>().username).toLowerCase();
-  const { configured, user, following, toggleFollow } = useStore();
+  const { configured, user } = useStore();
   const [inviter, setInviter] = useState<Profile | null | undefined>(undefined);
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
 
@@ -38,7 +39,6 @@ export default function InvitePage() {
   }
 
   const isMe = user?.id === inviter.id;
-  const follows = following.has(inviter.id);
 
   return (
     <section className="screen narrow invite" aria-label={`${inviter.username} invited you to Nook`}>
@@ -62,9 +62,7 @@ export default function InvitePage() {
           <p className="sub">This is your invite link. Send it to friends; when they join, you&apos;ll follow each other.</p>
         ) : user ? (
           <div className="invite-actions">
-            <button className={`btn${follows ? "" : " primary"}`} onClick={() => toggleFollow(inviter.id)}>
-              {follows ? "Following" : `Follow ${inviter.username}`}
-            </button>
+            <FollowButton userId={inviter.id} isPrivate={inviter.is_private} />
             <Link href={profileHref(inviter.username)} className="btn">
               See their profile
             </Link>

@@ -72,6 +72,7 @@ export type Profile = {
   show_stats: boolean;
   letterboxd_url: string | null;
   favorites: TitleRef[] | null;
+  is_private?: boolean | null;
 };
 
 export type CommentItem = {
@@ -87,7 +88,7 @@ export type CommentItem = {
 
 export type NotificationItem = {
   id: number;
-  type: "follow" | "like" | "comment";
+  type: "follow" | "like" | "comment" | "follow_request" | "follow_accepted";
   actor: string;
   actorColor: string;
   actorAvatar?: string;

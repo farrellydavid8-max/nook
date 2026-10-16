@@ -150,6 +150,19 @@ export default function CustomizeProfile({ onClose }: { onClose: () => void }) {
       </label>
 
       <div className="label" style={{ marginTop: 18 }}>
+        Privacy
+      </div>
+      <label className="check" htmlFor="private-account" style={{ alignItems: "flex-start", paddingTop: 8 }}>
+        <input id="private-account" type="checkbox" style={{ marginTop: 2 }} checked={Boolean(profile.is_private)} onChange={(e) => set({ is_private: e.target.checked })} />
+        <span>
+          Private account
+          <span className="sub" style={{ display: "block", lineHeight: 1.45 }}>
+            Only followers you approve can see your logs, reviews, updates, lists and games. New followers send a request first. Your name, picture and bio stay visible so friends can find you.
+          </span>
+        </span>
+      </label>
+
+      <div className="label" style={{ marginTop: 18 }}>
         Connected accounts
       </div>
       <SteamConnect />
