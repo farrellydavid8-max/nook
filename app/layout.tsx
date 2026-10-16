@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Serif_Display, Instrument_Sans } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import TabBar from "@/components/TabBar";
+import { Analytics } from "@vercel/analytics/next";
 import { EARLY_THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <TabBar />
           </div>
         </StoreProvider>
+        <Analytics />
       </body>
     </html>
   );
