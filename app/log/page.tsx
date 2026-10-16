@@ -60,7 +60,7 @@ function LogForm() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!title) return setError("Choose what you're logging first.");
-    const link = lb.trim();
+    const link = title.medium === "Film" ? lb.trim() : "";
     if (link && !LETTERBOXD.test(link)) {
       setLbError(true);
       return;
@@ -168,6 +168,7 @@ function LogForm() {
         setAdded={setMedia}
       />
 
+      {title?.medium === "Film" && (
       <label className="field" htmlFor="log-lb">
         Link a Letterboxd review (optional)
         <input
@@ -184,6 +185,7 @@ function LogForm() {
         />
         {lbError && <span className="err">Paste a link that starts with letterboxd.com</span>}
       </label>
+      )}
 
       <label className="check" htmlFor="log-rewatch">
         <input id="log-rewatch" type="checkbox" checked={rewatch} onChange={(e) => setRewatch(e.target.checked)} />
