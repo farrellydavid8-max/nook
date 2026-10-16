@@ -376,6 +376,9 @@ input[type="range"] { accent-color: var(--accent); padding: 0; border: 0; backgr
 
 .poster.square { aspect-ratio: 1; }
 
+.chip-edit { display: inline-flex; align-items: center; gap: 6px; border-style: dashed; color: var(--muted); }
+.chip-edit:hover { color: var(--fg); border-color: var(--accent); }
+
 /* ---------- Pieces that only show on one screen size ---------- */
 .thead-text { padding-top: 62px; min-width: 0; }
 .tab-label, .side-brand, .side-foot, .desktop-only, .rail { display: none; }

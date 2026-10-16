@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import FeedFilters, { useFeedFilters } from "@/components/FeedFilters";
 import PostCard from "@/components/PostCard";
 import SetupNotice from "@/components/SetupNotice";
 import SideRail from "@/components/SideRail";
 import { BellIcon, SearchIcon } from "@/components/Icons";
-import { MEDIA, type Medium } from "@/lib/data";
+import { MEDIA } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { usePosts } from "@/lib/usePosts";
 
@@ -15,7 +16,7 @@ type Scope = "following" | "everyone";
 export default function FeedPage() {
   const { configured, user, loading, following, unread } = useStore();
   const [scope, setScope] = useState<Scope>("everyone");
-  const [filter, setFilter] = useState<"All" | Medium>("All");
+  const { prefs, save } = useFeedFilters();
 
   // Start on "Following" once we know you follow someone
   useEffect(() => {
@@ -25,7 +26,9 @@ export default function FeedPage() {
   const followIds = useMemo(() => (user ? [user.id, ...following] : []), [user, following]);
   const query = scope === "following" && user ? { userIds: followIds, limit: 80 } : { limit: 80 };
   const { posts, loaded, error, reload } = usePosts(configured && !loading ? query : null);
-  const list = posts.filter((p) => filter === "All" || p.title.medium === filter);
+  // Nothing picked = everything; otherwise only the picked types
+  const list = posts.filter((p) => (prefs.selected.length ? prefs.selected.includes(p.title.medium) : true));
+  const filterName = prefs.selected.map((m) => MEDIA[m].toLowerCase()).join(" or ");
 
   return (
     <div className="feed-layout">
@@ -69,13 +72,7 @@ export default function FeedPage() {
                 </button>
               </div>
             )}
-            <div className="chips" role="group" aria-label="Filter by medium" style={{ paddingTop: 12 }}>
-              {(["All", ...Object.keys(MEDIA)] as ("All" | Medium)[]).map((k) => (
-                <button key={k} className="chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>
-                  {k === "All" ? "All" : MEDIA[k]}
-                </button>
-              ))}
-            </div>
+            <FeedFilters prefs={prefs} save={save} />
 
             <div className="feed">
               {error ? (
@@ -92,7 +89,7 @@ export default function FeedPage() {
                 </div>
               ) : (
                 <div className="empty">
-                  {filter === "All" ? "Nothing here yet." : `No ${MEDIA[filter].toLowerCase()} posts yet.`}
+                  {prefs.selected.length ? `No ${filterName} posts yet.` : "Nothing here yet."}
                   <br />
                   {user ? "Log something with the + button." : "Log in and be the first to post."}
                 </div>
